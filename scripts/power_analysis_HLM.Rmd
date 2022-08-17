@@ -1,0 +1,62 @@
+---
+title: "power analysis HLM"
+author: "Lior Abramson"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+rm(list=ls())
+
+##################################################################################################
+##POWER ANALYSIS_WP1
+library(Matrix)
+library(lme4)
+library(simr)
+#The model
+
+N <-48
+
+###simulating the variables
+#subject
+subject_one <-1:N
+subject <-1:N*4
+subject[subject>0] <-0
+for (i in 0:(N-1)) {
+  subject[(i*4+1):(i*4+4)] <- rep(subject_one[i+1],4)
+}
+
+#like rating
+likeRESP <- rnorm(n=N*4, mean=0, sd=1.5)
+
+version <- rep(c(0,0,1,1),N)
+time <- rep(c(0,1,0,1),N)
+
+#form one data frame
+v<-cbind(subject, likeRESP, version, time)
+v<-as.data.frame(v)
+
+
+#simulate effects based on the real results
+#LikeRESP_HLM <- lmer(data=DBehav_Longdif, LikeRESP~version*time+(1|Subject))
+
+b <- c(.208, -.3542,-.5417, .6042)
+varCor <- .2815
+s <- 1.3901
+
+model <- makeLmer(likeRESP ~ version*time +(1|subject), 
+                   fixef=b, VarCorr = varCor, sigma=s, data=v)
+summary(model)
+pow<-powerSim(model, nsim=1000, test = fcompare(likeRESP~version+time))
+pow
+
+
+#there is really not enough power to look at the behavioral results with HLM. Also, it produces warnings of singularity, perhaps stemming from the fact that there is one observation for each condition?
+#In contrast, the anova has power to detect that effect starting from 26 subjects.
+
+#Accordingly, I conclude that it is problematic to perform HLM given the small sample size and I continue with anova. 
+#Even though the normality assumption does not hold completely, it seems pretty ok for the like response. for the nervous response, the distribution is not normal, but the effect is so strong it comes significant also in other tests and so I feel confident reporting on it. 
+
+
+```
+

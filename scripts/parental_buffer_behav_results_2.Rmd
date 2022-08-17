@@ -1,0 +1,362 @@
+---
+title: "parental_buffer_behav_analyses"
+author: "Lior Abramson"
+date: "August 2022"
+output: html_document
+---
+
+House keeping:
+```{r setup, include=FALSE}
+#cleaning the environment
+  rm(list = ls())
+  cat ("\014")
+  if(is.null(dev.list()) == FALSE) dev.off()
+
+#Packages
+  packages <- c('reshape','psych','rstatix','tidyverse')
+  lapply(packages, require, character.only = TRUE)
+
+```
+
+Load data:
+```{r}
+#load data
+  D <- read.csv("../data/Class_cond_Behav_all_030422.csv")
+```
+
+Organize data:
+```{r}
+#arrange response vars (like+nervous questions)
+  DBehav <-D[!is.na(D$LikePre.RESP)|!is.na(D$LikePost.RESP),] #take only rating trials
+  
+  DBehav$Like.RESP <- NA
+  DBehav$Like.RESP[!is.na(DBehav$LikePre.RESP)]  <- DBehav$LikePre.RESP[!is.na(DBehav$LikePre.RESP)] 
+  DBehav$Like.RESP[!is.na(DBehav$LikePost.RESP)] <- DBehav$LikePost.RESP[!is.na(DBehav$LikePost.RESP)]
+  
+  DBehav$Nervous.RESP <- NA
+  DBehav$Nervous.RESP[!is.na(DBehav$NervousPre.RESP)]  <- DBehav$NervousPre.RESP[!is.na(DBehav$NervousPre.RESP)] 
+  DBehav$Nervous.RESP[!is.na(DBehav$NervousPost.RESP)] <- DBehav$NervousPost.RESP[!is.na(DBehav$NervousPost.RESP)]
+
+  DBehav$time <- NA
+  DBehav$time[!is.na(DBehav$LikePre.RESP)]  <-"Pre"
+  DBehav$time[!is.na(DBehav$LikePost.RESP)] <-"Post"
+  DBehav$version_time_and_stim <- paste0(DBehav$Version,"_",DBehav$time,"_",DBehav$Shape)
+  
+#take only relevant vars  
+  DBehav <- DBehav[,c("Subject","DataFile.Basename","Like.RESP","Nervous.RESP","version_time_and_stim")]
+  
+#remove version V1_REG of subject EL062  (a redundant, wrong file) 
+  DBehav <- DBehav[!(DBehav$Subject==62 & DBehav$DataFile.Basename=="Class_cond_v1_REG-0062-1"),]
+
+```
+
+combine information about condition (parent/alone)
+```{r}
+#turn to wide format
+#ignore warning message (refers to a subject who is about to be removed from the file anyway)
+  DBehav_Wide <- reshape(DBehav, timevar="version_time_and_stim",idvar="Subject", direction="wide")
+
+#import condition data
+  DParentInfo <- read.csv("../data/ClassCond_ParentConditionData.csv")
+  DBehav_Wide <- merge(DBehav_Wide,DParentInfo[,c("Subject","Version_Parent","Version_Alone")], by="Subject", all.x=T, all.y=F)
+  
+```
+
+check demographic details:
+```{r}
+#import data
+  DDemographics <- read.csv("../data/ELFK_demographics.csv")
+  DBehav_Wide <- merge(DBehav_Wide,DDemographics[,c("Subject","SEX","MRI_AGE","DEM_4_RACE_CHILD","DEM_4_RACE_CHILD_OTHER")], by="Subject", all.x=T, all.y=F)
+  
+#check demographic details
+  #age
+  summary(DBehav_Wide$MRI_AGE) 
+  sd(DBehav_Wide$MRI_AGE, na.rm=T) 
+  #sex
+  summary(as.factor(DBehav_Wide$SEX))
+  #race
+  summary(as.factor(DBehav_Wide$DEM_4_RACE_CHILD))
+```
+
+exclude participants (from both long and wide dataframes)
+```{r}
+#remove subjects 76 and 80 (experimenter error- watched the same shapes in both parent and alone condition)
+#remove subjects 24 and 88 (did not complete both conditions)
+  DBehav <- DBehav[DBehav$Subject!=76 & DBehav$Subject!=80 & DBehav$Subject!=24 & DBehav$Subject!=88,]
+  DBehav_Wide <- DBehav_Wide[DBehav_Wide$Subject!=76 & DBehav_Wide$Subject!=80 & DBehav_Wide$Subject!=24 & DBehav_Wide$Subject!=88,]
+
+#remove children from the caregiving related early adversities group
+  crEAsgroup <-c("6","60","97","98","99","101","102")
+  for (i in crEAsgroup){DBehav <- DBehav[DBehav$Subject!=i,]}
+  for (i in crEAsgroup){DBehav_Wide <- DBehav_Wide[DBehav_Wide$Subject!=i,]}
+  
+#check age and sex for the final behavioral sample
+  #age
+  summary(DBehav_Wide$MRI_AGE) 
+  sd(DBehav_Wide$MRI_AGE, na.rm=T) 
+  #sex
+  summary(as.factor(DBehav_Wide$SEX))
+  
+```
+
+create raw scores for each condition in the wide format
+```{r}
+#like question
+  DBehav_Wide$ParentPre_CSPlus <- NA
+  DBehav_Wide$ParentPre_CSMinus <- NA
+  DBehav_Wide$AlonePre_CSPlus <- NA
+  DBehav_Wide$AlonePre_CSMinus <- NA
+  
+  DBehav_Wide$ParentPost_CSPlus <- NA
+  DBehav_Wide$ParentPost_CSMinus <- NA
+  DBehav_Wide$AlonePost_CSPlus <- NA
+  DBehav_Wide$AlonePost_CSMinus <- NA
+  
+  DBehav_Wide$ParentPre_CSPlus[DBehav_Wide$Version_Parent=="V1"]   <-DBehav_Wide$Like.RESP.v1_Pre_CSPlus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$ParentPre_CSPlus[DBehav_Wide$Version_Parent=="V2"]   <-DBehav_Wide$Like.RESP.v2_Pre_CSPlus[DBehav_Wide$Version_Parent=="V2"]
+  DBehav_Wide$ParentPre_CSMinus[DBehav_Wide$Version_Parent=="V1"]  <-DBehav_Wide$Like.RESP.v1_Pre_CSMinus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$ParentPre_CSMinus[DBehav_Wide$Version_Parent=="V2"]  <-DBehav_Wide$Like.RESP.v2_Pre_CSMinus[DBehav_Wide$Version_Parent=="V2"]
+  DBehav_Wide$ParentPost_CSPlus[DBehav_Wide$Version_Parent=="V1"]  <-DBehav_Wide$Like.RESP.v1_Post_CSPlus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$ParentPost_CSPlus[DBehav_Wide$Version_Parent=="V2"]  <-DBehav_Wide$Like.RESP.v2_Post_CSPlus[DBehav_Wide$Version_Parent=="V2"]
+  DBehav_Wide$ParentPost_CSMinus[DBehav_Wide$Version_Parent=="V1"] <-DBehav_Wide$Like.RESP.v1_Post_CSMinus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$ParentPost_CSMinus[DBehav_Wide$Version_Parent=="V2"] <-DBehav_Wide$Like.RESP.v2_Post_CSMinus[DBehav_Wide$Version_Parent=="V2"]
+  
+  DBehav_Wide$AlonePre_CSPlus[DBehav_Wide$Version_Alone=="V1"]   <-DBehav_Wide$Like.RESP.v1_Pre_CSPlus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$AlonePre_CSPlus[DBehav_Wide$Version_Alone=="V2"]   <-DBehav_Wide$Like.RESP.v2_Pre_CSPlus[DBehav_Wide$Version_Alone=="V2"]
+  DBehav_Wide$AlonePre_CSMinus[DBehav_Wide$Version_Alone=="V1"]  <-DBehav_Wide$Like.RESP.v1_Pre_CSMinus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$AlonePre_CSMinus[DBehav_Wide$Version_Alone=="V2"]  <-DBehav_Wide$Like.RESP.v2_Pre_CSMinus[DBehav_Wide$Version_Alone=="V2"]
+  DBehav_Wide$AlonePost_CSPlus[DBehav_Wide$Version_Alone=="V1"]  <-DBehav_Wide$Like.RESP.v1_Post_CSPlus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$AlonePost_CSPlus[DBehav_Wide$Version_Alone=="V2"]  <-DBehav_Wide$Like.RESP.v2_Post_CSPlus[DBehav_Wide$Version_Alone=="V2"]
+  DBehav_Wide$AlonePost_CSMinus[DBehav_Wide$Version_Alone=="V1"] <-DBehav_Wide$Like.RESP.v1_Post_CSMinus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$AlonePost_CSMinus[DBehav_Wide$Version_Alone=="V2"] <-DBehav_Wide$Like.RESP.v2_Post_CSMinus[DBehav_Wide$Version_Alone=="V2"] 
+  
+#nervous question
+  DBehav_Wide$ParentPre_CSPlus.ner <- NA
+  DBehav_Wide$ParentPre_CSMinus.ner <- NA
+  DBehav_Wide$AlonePre_CSPlus.ner <- NA
+  DBehav_Wide$AlonePre_CSMinus.ner <- NA
+  
+  DBehav_Wide$ParentPost_CSPlus.ner <- NA
+  DBehav_Wide$ParentPost_CSMinus.ner <- NA
+  DBehav_Wide$AlonePost_CSPlus.ner <- NA
+  DBehav_Wide$AlonePost_CSMinus.ner <- NA
+  
+  DBehav_Wide$ParentPre_CSPlus.ner[DBehav_Wide$Version_Parent=="V1"]   <-DBehav_Wide$Nervous.RESP.v1_Pre_CSPlus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$ParentPre_CSPlus.ner[DBehav_Wide$Version_Parent=="V2"]   <-DBehav_Wide$Nervous.RESP.v2_Pre_CSPlus[DBehav_Wide$Version_Parent=="V2"]
+  DBehav_Wide$ParentPre_CSMinus.ner[DBehav_Wide$Version_Parent=="V1"]  <-DBehav_Wide$Nervous.RESP.v1_Pre_CSMinus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$ParentPre_CSMinus.ner[DBehav_Wide$Version_Parent=="V2"]  <-DBehav_Wide$Nervous.RESP.v2_Pre_CSMinus[DBehav_Wide$Version_Parent=="V2"]
+  DBehav_Wide$ParentPost_CSPlus.ner[DBehav_Wide$Version_Parent=="V1"]  <-DBehav_Wide$Nervous.RESP.v1_Post_CSPlus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$ParentPost_CSPlus.ner[DBehav_Wide$Version_Parent=="V2"]  <-DBehav_Wide$Nervous.RESP.v2_Post_CSPlus[DBehav_Wide$Version_Parent=="V2"]
+  DBehav_Wide$ParentPost_CSMinus.ner[DBehav_Wide$Version_Parent=="V1"] <-DBehav_Wide$Nervous.RESP.v1_Post_CSMinus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$ParentPost_CSMinus.ner[DBehav_Wide$Version_Parent=="V2"] <-DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Version_Parent=="V2"]
+  
+  DBehav_Wide$AlonePre_CSPlus.ner[DBehav_Wide$Version_Alone=="V1"]   <-DBehav_Wide$Nervous.RESP.v1_Pre_CSPlus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$AlonePre_CSPlus.ner[DBehav_Wide$Version_Alone=="V2"]   <-DBehav_Wide$Nervous.RESP.v2_Pre_CSPlus[DBehav_Wide$Version_Alone=="V2"]
+  DBehav_Wide$AlonePre_CSMinus.ner[DBehav_Wide$Version_Alone=="V1"]  <-DBehav_Wide$Nervous.RESP.v1_Pre_CSMinus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$AlonePre_CSMinus.ner[DBehav_Wide$Version_Alone=="V2"]  <-DBehav_Wide$Nervous.RESP.v2_Pre_CSMinus[DBehav_Wide$Version_Alone=="V2"]
+  DBehav_Wide$AlonePost_CSPlus.ner[DBehav_Wide$Version_Alone=="V1"]  <-DBehav_Wide$Nervous.RESP.v1_Post_CSPlus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$AlonePost_CSPlus.ner[DBehav_Wide$Version_Alone=="V2"]  <-DBehav_Wide$Nervous.RESP.v2_Post_CSPlus[DBehav_Wide$Version_Alone=="V2"]
+  DBehav_Wide$AlonePost_CSMinus.ner[DBehav_Wide$Version_Alone=="V1"] <-DBehav_Wide$Nervous.RESP.v1_Post_CSMinus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$AlonePost_CSMinus.ner[DBehav_Wide$Version_Alone=="V2"] <-DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Version_Alone=="V2"]
+```
+
+create difference scores- substracting CS- from CS+ for pre and post ratings
+```{r}
+#first, create a variable for each run order (v1 and v2)
+#like question
+#a more negative score means that the CS+ was less liked than the CSminus
+  DBehav_Wide$v1_Pre_PlusMinMinus  <- DBehav_Wide$Like.RESP.v1_Pre_CSPlus - DBehav_Wide$Like.RESP.v1_Pre_CSMinus
+  DBehav_Wide$v1_Post_PlusMinMinus <- DBehav_Wide$Like.RESP.v1_Post_CSPlus- DBehav_Wide$Like.RESP.v1_Post_CSMinus
+  DBehav_Wide$v2_Pre_PlusMinMinus  <- DBehav_Wide$Like.RESP.v2_Pre_CSPlus - DBehav_Wide$Like.RESP.v2_Pre_CSMinus
+  DBehav_Wide$v2_Post_PlusMinMinus <- DBehav_Wide$Like.RESP.v2_Post_CSPlus- DBehav_Wide$Like.RESP.v2_Post_CSMinus
+  
+#nervous question
+#a more positive score means that the CS+ made participants more nervous than the CS-
+  DBehav_Wide$v1_Pre_PlusMinMinus.ner  <- DBehav_Wide$Nervous.RESP.v1_Pre_CSPlus - DBehav_Wide$Nervous.RESP.v1_Pre_CSMinus
+  DBehav_Wide$v1_Post_PlusMinMinus.ner <- DBehav_Wide$Nervous.RESP.v1_Post_CSPlus- DBehav_Wide$Nervous.RESP.v1_Post_CSMinus
+  DBehav_Wide$v2_Pre_PlusMinMinus.ner  <- DBehav_Wide$Nervous.RESP.v2_Pre_CSPlus - DBehav_Wide$Nervous.RESP.v2_Pre_CSMinus
+  DBehav_Wide$v2_Post_PlusMinMinus.ner <- DBehav_Wide$Nervous.RESP.v2_Post_CSPlus- DBehav_Wide$Nervous.RESP.v2_Post_CSMinus
+  
+#next, create difference score according to condition (parent vs. alone) 
+  #Like question
+  DBehav_Wide$Parent_Pre_PlusMinMinus <- NA
+  DBehav_Wide$Alone_Pre_PlusMinMinus <- NA
+  DBehav_Wide$Parent_Post_PlusMinMinus <- NA
+  DBehav_Wide$Alone_Post_PlusMinMinus <- NA
+  
+  DBehav_Wide$Parent_Pre_PlusMinMinus[DBehav_Wide$Version_Parent=="V1"] <-DBehav_Wide$v1_Pre_PlusMinMinus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$Parent_Pre_PlusMinMinus[DBehav_Wide$Version_Parent=="V2"] <-DBehav_Wide$v2_Pre_PlusMinMinus[DBehav_Wide$Version_Parent=="V2"]
+  
+  DBehav_Wide$Alone_Pre_PlusMinMinus[DBehav_Wide$Version_Alone=="V1"] <-DBehav_Wide$v1_Pre_PlusMinMinus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$Alone_Pre_PlusMinMinus[DBehav_Wide$Version_Alone=="V2"] <-DBehav_Wide$v2_Pre_PlusMinMinus[DBehav_Wide$Version_Alone=="V2"]
+  
+  DBehav_Wide$Parent_Post_PlusMinMinus[DBehav_Wide$Version_Parent=="V1"] <-DBehav_Wide$v1_Post_PlusMinMinus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$Parent_Post_PlusMinMinus[DBehav_Wide$Version_Parent=="V2"] <-DBehav_Wide$v2_Post_PlusMinMinus[DBehav_Wide$Version_Parent=="V2"]
+  
+  DBehav_Wide$Alone_Post_PlusMinMinus[DBehav_Wide$Version_Alone=="V1"] <-DBehav_Wide$v1_Post_PlusMinMinus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$Alone_Post_PlusMinMinus[DBehav_Wide$Version_Alone=="V2"] <-DBehav_Wide$v2_Post_PlusMinMinus[DBehav_Wide$Version_Alone=="V2"]
+  
+  #Nervous question
+  DBehav_Wide$Parent_Pre_PlusMinMinus.ner <- NA
+  DBehav_Wide$Alone_Pre_PlusMinMinus.ner <- NA
+  DBehav_Wide$Parent_Post_PlusMinMinus.ner <- NA
+  DBehav_Wide$Alone_Post_PlusMinMinus.ner <- NA
+  
+  DBehav_Wide$Parent_Pre_PlusMinMinus.ner[DBehav_Wide$Version_Parent=="V1"] <-DBehav_Wide$v1_Pre_PlusMinMinus.ner[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$Parent_Pre_PlusMinMinus.ner[DBehav_Wide$Version_Parent=="V2"] <-DBehav_Wide$v2_Pre_PlusMinMinus.ner[DBehav_Wide$Version_Parent=="V2"]
+  
+  DBehav_Wide$Alone_Pre_PlusMinMinus.ner[DBehav_Wide$Version_Alone=="V1"] <-DBehav_Wide$v1_Pre_PlusMinMinus.ner[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$Alone_Pre_PlusMinMinus.ner[DBehav_Wide$Version_Alone=="V2"] <-DBehav_Wide$v2_Pre_PlusMinMinus.ner[DBehav_Wide$Version_Alone=="V2"]
+  
+  DBehav_Wide$Parent_Post_PlusMinMinus.ner[DBehav_Wide$Version_Parent=="V1"] <-DBehav_Wide$v1_Post_PlusMinMinus.ner[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$Parent_Post_PlusMinMinus.ner[DBehav_Wide$Version_Parent=="V2"] <-DBehav_Wide$v2_Post_PlusMinMinus.ner[DBehav_Wide$Version_Parent=="V2"]
+  
+  DBehav_Wide$Alone_Post_PlusMinMinus.ner[DBehav_Wide$Version_Alone=="V1"] <-DBehav_Wide$v1_Post_PlusMinMinus.ner[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$Alone_Post_PlusMinMinus.ner[DBehav_Wide$Version_Alone=="V2"] <-DBehav_Wide$v2_Post_PlusMinMinus.ner[DBehav_Wide$Version_Alone=="V2"]
+  
+```
+
+look at the variables' descriptive statistics
+```{r}
+#like question
+  describe(DBehav_Wide[,c("ParentPre_CSMinus","ParentPost_CSMinus","ParentPre_CSPlus","ParentPost_CSPlus",
+                          "AlonePre_CSMinus","AlonePost_CSMinus","AlonePre_CSPlus","AlonePost_CSPlus")])
+
+#nervous question
+  describe (DBehav_Wide[,c("ParentPre_CSMinus.ner","ParentPost_CSMinus.ner","ParentPre_CSPlus.ner","ParentPost_CSPlus.ner",
+                           "AlonePre_CSMinus.ner","AlonePost_CSMinus.ner","AlonePre_CSPlus.ner","AlonePost_CSPlus.ner")])
+
+#difference score-like question
+  describe(DBehav_Wide[,c("Parent_Pre_PlusMinMinus","Parent_Post_PlusMinMinus",
+                          "Alone_Pre_PlusMinMinus","Alone_Post_PlusMinMinus")])
+  
+#difference score-nervous question
+  describe(DBehav_Wide[,c("Parent_Pre_PlusMinMinus.ner","Parent_Post_PlusMinMinus.ner",
+                          "Alone_Pre_PlusMinMinus.ner","Alone_Post_PlusMinMinus.ner")])
+
+```
+preliminary analyses- relation with age and sex
+```{r}
+#relation with sex
+t.test (data = DBehav_Wide, Parent_Pre_PlusMinMinus ~ SEX)
+t.test (data = DBehav_Wide, Parent_Post_PlusMinMinus ~ SEX)
+t.test (data = DBehav_Wide, Alone_Pre_PlusMinMinus ~ SEX)
+t.test (data = DBehav_Wide, Alone_Post_PlusMinMinus ~ SEX)
+
+t.test (data = DBehav_Wide, Parent_Pre_PlusMinMinus.ner ~ SEX)
+t.test (data = DBehav_Wide, Parent_Post_PlusMinMinus.ner ~ SEX)
+t.test (data = DBehav_Wide, Alone_Pre_PlusMinMinus.ner ~ SEX)
+t.test (data = DBehav_Wide, Alone_Post_PlusMinMinus.ner ~ SEX)
+
+#relation with age
+cor.test (DBehav_Wide$Parent_Pre_PlusMinMinus, DBehav_Wide$MRI_AGE )
+cor.test (DBehav_Wide$Parent_Post_PlusMinMinus, DBehav_Wide$MRI_AGE )
+cor.test (DBehav_Wide$Alone_Pre_PlusMinMinus, DBehav_Wide$MRI_AGE )
+cor.test (DBehav_Wide$Alone_Post_PlusMinMinus, DBehav_Wide$MRI_AGE )
+
+cor.test (DBehav_Wide$Parent_Pre_PlusMinMinus.ner, DBehav_Wide$MRI_AGE )
+cor.test (DBehav_Wide$Parent_Post_PlusMinMinus.ner, DBehav_Wide$MRI_AGE )
+cor.test (DBehav_Wide$Alone_Pre_PlusMinMinus.ner, DBehav_Wide$MRI_AGE )
+cor.test (DBehav_Wide$Alone_Post_PlusMinMinus.ner, DBehav_Wide$MRI_AGE )
+
+```
+
+
+
+create a long format for the difference scores
+```{r}
+ DBehav_Longdif <- DBehav_Wide[,c("Subject",
+                                  "Parent_Pre_PlusMinMinus","Parent_Post_PlusMinMinus",
+                                  "Alone_Pre_PlusMinMinus","Alone_Post_PlusMinMinus",
+                                  "Parent_Pre_PlusMinMinus.ner","Parent_Post_PlusMinMinus.ner",
+                                  "Alone_Pre_PlusMinMinus.ner","Alone_Post_PlusMinMinus.ner")]
+
+#change vars names
+ colnames(DBehav_Longdif) <- gsub("_PlusMinMinus","",colnames(DBehav_Longdif))
+ colnames(DBehav_Longdif) <- gsub("_","",colnames(DBehav_Longdif))
+ col <- colnames(DBehav_Longdif)
+ colnames(DBehav_Longdif)[c(which(col=="ParentPre.ner"),which(col=="ParentPost.ner"),which(col=="AlonePre.ner"),which(col=="AlonePost.ner"))] <-
+                          c("NervousRESP_ParentPre","NervousRESP_ParentPost","NervousRESP_AlonePre","NervousRESP_AlonePost")
+ colnames(DBehav_Longdif)[c(which(col=="ParentPre"),which(col=="ParentPost"), which(col=="AlonePre"),which(col=="AlonePost"))] <-
+                          c("LikeRESP_ParentPre","LikeRESP_ParentPost","LikeRESP_AlonePre","LikeRESP_AlonePost")
+ 
+#turn to long format 
+ DBehav_Longdif <- reshape(DBehav_Longdif,idvar="Subject", timevar = "versiontime",
+                                varying=colnames(DBehav_Longdif)[2:9],direction="long", sep="_")
+  
+ DBehav_Longdif$version <-NA
+ DBehav_Longdif$version[DBehav_Longdif$versiontime=="ParentPre"|DBehav_Longdif$versiontime=="ParentPost"] <- "Parent"
+ DBehav_Longdif$version[DBehav_Longdif$versiontime=="AlonePre"|DBehav_Longdif$versiontime=="AlonePost"] <- "Alone"
+  
+ DBehav_Longdif$time <-NA
+ DBehav_Longdif$time[DBehav_Longdif$versiontime=="ParentPre"| DBehav_Longdif$versiontime=="AlonePre"] <- "1Pre"
+ DBehav_Longdif$time[DBehav_Longdif$versiontime=="ParentPost"| DBehav_Longdif$versiontime=="AlonePost"] <- "2Post"
+ 
+#verify that means stay the same after reshaping
+ describeBy(data=DBehav_Longdif, LikeRESP ~ time+version)  
+ describeBy(data=DBehav_Longdif, NervousRESP ~ time+version)
+#all good
+  
+```
+
+statistical tests- like question
+```{r}
+
+#three-way anova
+  LikeRESP_anovatest <- anova_test(data = DBehav_Longdif, dv = LikeRESP, wid = Subject,within = c(version, time), type=3, effect.size = "pes")
+  get_anova_table(LikeRESP_anovatest, correction ="GG")
+  
+#investigate simple effects - with ttests
+  t.test (DBehav_Wide$Parent_Post_PlusMinMinus,DBehav_Wide$Parent_Pre_PlusMinMinus,paired = TRUE, alternative = "two.sided")
+  t.test (DBehav_Wide$Alone_Post_PlusMinMinus, DBehav_Wide$Alone_Pre_PlusMinMinus,paired = TRUE, alternative = "two.sided")
+  #using Benjamin Hochberg calculator (https://www.sdmproject.com/utilities/?show=FDR), adjusted pvalue for the parent simple effect is p = .052
+  
+#just for verification: investigate simple effects with anova
+  LikeRESP_bycond <- DBehav_Longdif %>%
+    group_by(version) %>%
+    anova_test(dv = LikeRESP, wid = Subject, within = time) %>%
+    get_anova_table() %>%
+    adjust_pvalue(method = "hochberg") %>%
+    ungroup
+  
+  LikeRESP_bycond
+  
+#visualization
+#a) summarize overall group effects by condition
+  sum_dif <- DBehav_Longdif %>% 
+    mutate(version = as.factor(version)) %>% 
+    group_by(version, time) %>% 
+    summarize(LikeRESP = mean(LikeRESP, na.rm = T))
+  sum_dif
+  
+#b) plot- NEED TO ADD STANDARD ERRORS
+  LikeRESP_plot <- ggplot(data = DBehav_Longdif, aes(x = time, y = LikeRESP, color = version)) + 
+    geom_path(alpha = 0.2, size = 0.2) +
+    labs (x = "time", y = "Like rating difference (CS+ > CS-) ") +
+    scale_x_discrete(labels=c("Pre-learning", "Post-learning")) +
+    ylim(-1, 1) +
+    geom_line(data = sum_dif, aes(x = time, y = LikeRESP, group = version,color = version), size = 2.5) +
+    theme_classic() +
+    scale_color_brewer(palette="Set2") +
+    scale_linetype_manual(values=c("dashed", "solid")) +
+    theme(axis.text = element_text(size = 16) , axis.title = element_text(size = 20))
+  LikeRESP_plot
+  
+```
+
+statistical tests- nervous question
+```{r}
+
+#three-way anova
+  NervousRESP_anovatest <- anova_test(data = DBehav_Longdif, dv = NervousRESP, wid = Subject,within = c(version, time), type=3, effect.size = "pes")
+  get_anova_table(NervousRESP_anovatest, correction = "GG")
+  
+#investigate the main effect of time 
+  DBehav_Wide$Bothcond_Post_PlusMinMinus.ner <- rowMeans(DBehav_Wide[,c("Parent_Post_PlusMinMinus.ner","Alone_Post_PlusMinMinus.ner")],na.rm=T)
+  DBehav_Wide$Bothcond_Pre_PlusMinMinus.ner <- rowMeans(DBehav_Wide[,c("Parent_Pre_PlusMinMinus.ner","Alone_Pre_PlusMinMinus.ner")],na.rm=T)
+  
+  describe(DBehav_Wide[,c("Bothcond_Post_PlusMinMinus.ner","Bothcond_Pre_PlusMinMinus.ner")])
+  t.test (DBehav_Wide$Bothcond_Post_PlusMinMinus.ner,DBehav_Wide$Bothcond_Pre_PlusMinMinus.ner,paired = TRUE, alternative = "two.sided")
+  
+```
+
