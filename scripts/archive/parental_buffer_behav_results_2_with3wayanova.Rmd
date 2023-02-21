@@ -13,7 +13,7 @@ House keeping:
   if(is.null(dev.list()) == FALSE) dev.off()
 
 #Packages
-  packages <- c('reshape','psych','rstatix','tidyverse')
+  packages <- c('reshape','psych','rstatix','tidyverse', 'Rmisc', 'lme4')
   lapply(packages, require, character.only = TRUE)
 
 ```
@@ -90,12 +90,14 @@ exclude participants (from both long and wide dataframes)
   for (i in crEAsgroup){DBehav <- DBehav[DBehav$Subject!=i,]}
   for (i in crEAsgroup){DBehav_Wide <- DBehav_Wide[DBehav_Wide$Subject!=i,]}
   
-#check age and sex for the final behavioral sample
+#check age, sex and race for the final behavioral sample
   #age
   summary(DBehav_Wide$MRI_AGE) 
   sd(DBehav_Wide$MRI_AGE, na.rm=T) 
   #sex
   summary(as.factor(DBehav_Wide$SEX))
+  #race
+  summary(as.factor(DBehav_Wide$DEM_4_RACE_CHILD))
   
 ```
 
@@ -160,7 +162,7 @@ create raw scores for each condition in the wide format
   DBehav_Wide$AlonePost_CSMinus.ner[DBehav_Wide$Version_Alone=="V2"] <-DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Version_Alone=="V2"]
 ```
 
-create difference scores- substracting CS- from CS+ for pre and post ratings
+create difference scores- substract CS- from CS+ for pre and post ratings
 ```{r}
 #first, create a variable for each run order (v1 and v2)
 #like question
@@ -235,6 +237,7 @@ look at the variables' descriptive statistics
                           "Alone_Pre_PlusMinMinus.ner","Alone_Post_PlusMinMinus.ner")])
 
 ```
+
 preliminary analyses- relation with age and sex
 ```{r}
 #relation with sex
@@ -260,8 +263,6 @@ cor.test (DBehav_Wide$Alone_Pre_PlusMinMinus.ner, DBehav_Wide$MRI_AGE )
 cor.test (DBehav_Wide$Alone_Post_PlusMinMinus.ner, DBehav_Wide$MRI_AGE )
 
 ```
-
-
 
 create a long format for the difference scores
 ```{r}
@@ -299,10 +300,10 @@ create a long format for the difference scores
   
 ```
 
-statistical tests- like question
+statistical test- like question
 ```{r}
 
-#three-way anova
+#two-way anova
   LikeRESP_anovatest <- anova_test(data = DBehav_Longdif, dv = LikeRESP, wid = Subject,within = c(version, time), type=3, effect.size = "pes")
   get_anova_table(LikeRESP_anovatest, correction ="GG")
   
@@ -323,31 +324,29 @@ statistical tests- like question
   
 #visualization
 #a) summarize overall group effects by condition
-  sum_dif <- DBehav_Longdif %>% 
-    mutate(version = as.factor(version)) %>% 
-    group_by(version, time) %>% 
-    summarize(LikeRESP = mean(LikeRESP, na.rm = T))
-  sum_dif
+  sum_like_dif_se <- summarySE(data = DBehav_Longdif, measurevar="LikeRESP", groupvars =c("version","time"),
+             na.rm = T, conf.interval = 0.95,.drop = TRUE)
   
-#b) plot- NEED TO ADD STANDARD ERRORS
-  LikeRESP_plot <- ggplot(data = DBehav_Longdif, aes(x = time, y = LikeRESP, color = version)) + 
+#b) plot
+  LikeRESP_plot <- ggplot(data = as.data.frame(sum_like_dif_se), aes(x = time, y = LikeRESP, group=version, colour = version)) + 
     geom_path(alpha = 0.2, size = 0.2) +
+    geom_errorbar(aes(ymin=LikeRESP-se, ymax=LikeRESP+se), width=.1, position=position_dodge(0.05)) +
+    geom_line(aes(x = time, y = LikeRESP,color = version), size = 2.5) +
     labs (x = "time", y = "Like rating difference (CS+ > CS-) ") +
     scale_x_discrete(labels=c("Pre-learning", "Post-learning")) +
     ylim(-1, 1) +
-    geom_line(data = sum_dif, aes(x = time, y = LikeRESP, group = version,color = version), size = 2.5) +
     theme_classic() +
     scale_color_brewer(palette="Set2") +
     scale_linetype_manual(values=c("dashed", "solid")) +
     theme(axis.text = element_text(size = 16) , axis.title = element_text(size = 20))
   LikeRESP_plot
-  
+   
 ```
 
-statistical tests- nervous question
+statistical test- nervous question
 ```{r}
 
-#three-way anova
+#two-way anova
   NervousRESP_anovatest <- anova_test(data = DBehav_Longdif, dv = NervousRESP, wid = Subject,within = c(version, time), type=3, effect.size = "pes")
   get_anova_table(NervousRESP_anovatest, correction = "GG")
   
@@ -356,7 +355,110 @@ statistical tests- nervous question
   DBehav_Wide$Bothcond_Pre_PlusMinMinus.ner <- rowMeans(DBehav_Wide[,c("Parent_Pre_PlusMinMinus.ner","Alone_Pre_PlusMinMinus.ner")],na.rm=T)
   
   describe(DBehav_Wide[,c("Bothcond_Post_PlusMinMinus.ner","Bothcond_Pre_PlusMinMinus.ner")])
+#descriptive statistics without subject 56 (has no nervous data in the parent condition)
+  describe(DBehav_Wide[DBehav_Wide$Subject!=56,c("Bothcond_Post_PlusMinMinus.ner","Bothcond_Pre_PlusMinMinus.ner")])
   t.test (DBehav_Wide$Bothcond_Post_PlusMinMinus.ner,DBehav_Wide$Bothcond_Pre_PlusMinMinus.ner,paired = TRUE, alternative = "two.sided")
+#t.test without subject 56 for the same reason
+  t.test (DBehav_Wide$Bothcond_Post_PlusMinMinus.ner[DBehav_Wide$Subject!=56],
+          DBehav_Wide$Bothcond_Pre_PlusMinMinus.ner[DBehav_Wide$Subject!=56],
+          paired = TRUE, alternative = "two.sided")
+  
+  
+#visualization
+#a) summarize overall group effects by condition
+  sum_nervous_dif_se <- summarySE(data = DBehav_Longdif, measurevar="NervousRESP", groupvars =c("version","time"),
+             na.rm = T, conf.interval = 0.95,.drop = TRUE)
+  
+#b) plot
+  NervousRESP_plot <- ggplot(data = as.data.frame(sum_nervous_dif_se), aes(x = time, y = NervousRESP, group=version, colour = version)) + 
+    geom_path(alpha = 0.2, size = 0.2) +
+    geom_errorbar(aes(ymin=NervousRESP-se, ymax=NervousRESP+se), width=.1, position=position_dodge(0.05)) +
+    geom_line(aes(x = time, y = NervousRESP,color = version), size = 2.5) +
+    labs (x = "time", y = "Nervousness rating difference (CS+ > CS-) ") +
+    scale_x_discrete(labels=c("Pre-learning", "Post-learning")) +
+    ylim(-1, 1) +
+    theme_classic() +
+    scale_color_brewer(palette="Set2") +
+    scale_linetype_manual(values=c("dashed", "solid")) +
+    theme(axis.text = element_text(size = 16) , axis.title = element_text(size = 20))
+  NervousRESP_plot
+```
+checking both nervous and like question in the same analysis
+```{r}
+#turn to an even longer format 
+  DBehav_Longdif_Like <- DBehav_Longdif
+  DBehav_Longdif_Like$RESP <- DBehav_Longdif_Like$LikeRESP
+  DBehav_Longdif_Like$question <- "like"
+  #change the direction of the like rating to be consistent with the nervous rating. Here a more positive score means that the CS+ was LESS liked than the CS-
+  DBehav_Longdif_Like$RESP <- DBehav_Longdif_Like$RESP *-1
+  
+  DBehav_Longdif_Nervous <- DBehav_Longdif
+  DBehav_Longdif_Nervous$RESP <- DBehav_Longdif_Nervous$NervousRESP
+  DBehav_Longdif_Nervous$question <- "nervous"
+  
+  DBehav_Longerdif <- rbind(DBehav_Longdif_Like,DBehav_Longdif_Nervous)
+  col <- colnames(DBehav_Longerdif)
+  DBehav_Longerdif <- DBehav_Longerdif[,-c(which (col=="LikeRESP"),which(col=="NervousRESP"))]
+  
+#anova
+  RESP_anovatest <- anova_test(data = DBehav_Longerdif, dv = RESP, wid = Subject, within = c(question, version, time), 
+                               type=3, effect.size = "pes")
+  get_anova_table(RESP_anovatest, correction = "GG")
+  
+#check that I get the same results with formula syntax
+  RESP_anovatest <- anova_test(data = DBehav_Longerdif, RESP ~ question*version*time + Error(Subject/(question*version*time)), 
+                               type=3,effect.size = "pes")
+  get_anova_table(RESP_anovatest, correction = "GG")
+  
+#check that I get the same results with aov function
+  RESP_aov <- aov(data=DBehav_Longerdif, RESP ~ question*version*time+ Error(factor(Subject)/(question*version*time)))
+  summary(RESP_aov)
+  #not exactly the same but similar. Something is specified wrong here because the model is singular. In any events, the question*time interaction
+  #is significant also here and many of the effects turn the same. So I count the anova_test function and continue with it. 
+  
+
+#check the two-way interaction
+RESP_qxt_anovatest <- DBehav_Longerdif %>% 
+  group_by(version) %>%
+  anova_test(dv = RESP, wid = Subject,within = c(question,time), type=3, effect.size = "pes") 
+get_anova_table(RESP_qxt_anovatest, correction = "GG")
+
+RESP_bothcond <- aggregate(DBehav_Longerdif$RESP,by=list(DBehav_Longerdif$Subject,DBehav_Longerdif$time,DBehav_Longerdif$question), FUN="mean")
+colnames(RESP_bothcond) <- c("Subject","time","question","RESP")
+
+RESP_bothcond_anovatest <- RESP_bothcond %>% 
+  group_by(question) %>%
+  anova_test(dv = RESP, wid = Subject,within = c(time), type=3, effect.size = "pes") 
+get_anova_table(RESP_bothcond_anovatest, correction = "GG")
+
+
+#look at descriptives
+describeBy(data=RESP_bothcond[RESP_bothcond$question=="like",], RESP~time) 
+describeBy(data=RESP_bothcond[RESP_bothcond$question=="nervous",], RESP~time) 
+
+RESP_bothcond_simpletest <- RESP_bothcond %>%
+    group_by(question) %>%
+    anova_test(dv = RESP, wid = Subject, within = time) %>%
+    get_anova_table() %>%
+    adjust_pvalue(method = "hochberg") %>%
+    ungroup
+RESP_bothcond_simpletest
+
+#investigate with ttests
+RESP_bothcond_Wide <- RESP_bothcond
+RESP_bothcond_Wide$ques_time <- paste0(RESP_bothcond_Wide$question,RESP_bothcond_Wide$time)
+RESP_bothcond_Wide <- reshape(RESP_bothcond_Wide, timevar="ques_time",idvar="Subject", direction="wide")
+
+describe(RESP_bothcond_Wide[,c("RESP.like1Pre","RESP.like2Post")])
+t.test (RESP_bothcond_Wide$RESP.like2Post,RESP_bothcond_Wide$RESP.like1Pre,paired = TRUE, alternative = "two.sided")
+  
+describe(RESP_bothcond_Wide[,c("RESP.nervous1Pre","RESP.nervous2Post")])
+t.test (RESP_bothcond_Wide$RESP.nervous2Post,RESP_bothcond_Wide$RESP.nervous1Pre,paired = TRUE, alternative = "two.sided")
+#using BHC calculator, adjusted p is 0.0010972
+
+#hlm
+  RESP_hlm <- lmer(data=DBehav_Longerdif, RESP ~ question*version*time+ (1|Subject))
+  summary(RESP_hlm)
   
 ```
 

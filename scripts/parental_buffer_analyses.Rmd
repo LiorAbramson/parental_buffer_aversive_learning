@@ -1,0 +1,2312 @@
+---
+title: "parental_buffer_behav_analyses"
+author: "Lior Abramson"
+date: "August 2022"
+output: html_document
+---
+
+House keeping:
+```{r setup, include=FALSE}
+  rm(list = ls())
+  cat ("\014")
+  if(is.null(dev.list()) == FALSE) dev.off()
+
+#Packages
+  packages <- c('reshape','psych','rstatix','tidyverse', 'Rmisc', 'lme4','ggpubr','report')
+  lapply(packages, require, character.only = TRUE)
+
+```
+
+Load data:
+```{r}
+#load data
+  D <- read.csv("../data/Class_cond_Behav_all_030422.csv")
+```
+
+Organize data:
+```{r}
+#arrange response vars (like+nervous questions)
+  DBehav <-D[!is.na(D$LikePre.RESP)|!is.na(D$LikePost.RESP),] #take only rating trials
+  
+  DBehav$Like.RESP <- NA
+  DBehav$Like.RESP[!is.na(DBehav$LikePre.RESP)]  <- DBehav$LikePre.RESP[!is.na(DBehav$LikePre.RESP)] 
+  DBehav$Like.RESP[!is.na(DBehav$LikePost.RESP)] <- DBehav$LikePost.RESP[!is.na(DBehav$LikePost.RESP)]
+  
+  DBehav$Nervous.RESP <- NA
+  DBehav$Nervous.RESP[!is.na(DBehav$NervousPre.RESP)]  <- DBehav$NervousPre.RESP[!is.na(DBehav$NervousPre.RESP)] 
+  DBehav$Nervous.RESP[!is.na(DBehav$NervousPost.RESP)] <- DBehav$NervousPost.RESP[!is.na(DBehav$NervousPost.RESP)]
+
+  DBehav$time <- NA
+  DBehav$time[!is.na(DBehav$LikePre.RESP)]  <-"Pre"
+  DBehav$time[!is.na(DBehav$LikePost.RESP)] <-"Post"
+  DBehav$version_time_and_stim <- paste0(DBehav$Version,"_",DBehav$time,"_",DBehav$Shape)
+  
+#take only relevant vars  
+  DBehav <- DBehav[,c("Subject","DataFile.Basename","Like.RESP","Nervous.RESP","version_time_and_stim")]
+  
+#remove version V1_REG of subject EL062  (a redundant, wrong file) 
+  DBehav <- DBehav[!(DBehav$Subject==62 & DBehav$DataFile.Basename=="Class_cond_v1_REG-0062-1"),]
+
+```
+
+combine information about condition (parent/alone)
+```{r}
+#turn to wide format
+#ignore warning message (refers to a subject who is about to be removed from the file anyway)
+  DBehav_Wide <- reshape(DBehav, timevar="version_time_and_stim",idvar="Subject", direction="wide")
+
+#import condition data
+  DParentInfo <- read.csv("../data/ClassCond_ParentConditionData.csv")
+  DBehav_Wide <- merge(DBehav_Wide,DParentInfo[,c("Subject","Version_Parent","Version_Alone","First_Cond")], by="Subject", all.x=T, all.y=F)
+  
+```
+
+check demographic details:
+```{r}
+#import data
+  DDemographics <- read.csv("../data/ELFK_demographics.csv")
+  DBehav_Wide <- merge(DBehav_Wide,DDemographics[,c("Subject","SEX","MRI_AGE","DEM_4_RACE_CHILD","DEM_4_RACE_CHILD_OTHER")], by="Subject", all.x=T, all.y=F)
+  
+#check demographic details
+  #age
+  summary(DBehav_Wide$MRI_AGE) 
+  sd(DBehav_Wide$MRI_AGE, na.rm=T) 
+  #sex
+  summary(as.factor(DBehav_Wide$SEX))
+  #race
+  summary(as.factor(DBehav_Wide$DEM_4_RACE_CHILD))
+```
+
+exclude participants (from both long and wide dataframes)
+```{r}
+#remove children from the caregiving related early adversities group
+  crEAsgroup <-c("6","60","97","98","99","101","102")
+  for (i in crEAsgroup){DBehav <- DBehav[DBehav$Subject!=i,]}
+  for (i in crEAsgroup){DBehav_Wide <- DBehav_Wide[DBehav_Wide$Subject!=i,]}
+  
+#check age, sex and race without them
+  #age
+  summary(DBehav_Wide$MRI_AGE) 
+  sd(DBehav_Wide$MRI_AGE, na.rm=T) 
+  #sex
+  summary(as.factor(DBehav_Wide$SEX))
+  #race
+  summary(as.factor(DBehav_Wide$DEM_4_RACE_CHILD))
+  
+
+#remove subjects 76 and 80 (experimenter error- watched the same shapes in both parent and alone condition)
+#remove subjects 24 and 88 (did not complete both conditions)
+  DBehav <- DBehav[DBehav$Subject!=76 & DBehav$Subject!=80 & DBehav$Subject!=24 & DBehav$Subject!=88,]
+  DBehav_Wide <- DBehav_Wide[DBehav_Wide$Subject!=76 & DBehav_Wide$Subject!=80 & DBehav_Wide$Subject!=24 & DBehav_Wide$Subject!=88,]
+
+#check age, sex and race for the final behavioral sample
+  #age
+  summary(DBehav_Wide$MRI_AGE) 
+  sd(DBehav_Wide$MRI_AGE, na.rm=T) 
+  #sex
+  summary(as.factor(DBehav_Wide$SEX))
+  #race
+  summary(as.factor(DBehav_Wide$DEM_4_RACE_CHILD))
+  
+```
+
+create raw scores for each condition in the wide format
+```{r}
+#like question
+  DBehav_Wide$ParentPre_CSPlus <- NA
+  DBehav_Wide$ParentPre_CSMinus <- NA
+  DBehav_Wide$AlonePre_CSPlus <- NA
+  DBehav_Wide$AlonePre_CSMinus <- NA
+  
+  DBehav_Wide$ParentPost_CSPlus <- NA
+  DBehav_Wide$ParentPost_CSMinus <- NA
+  DBehav_Wide$AlonePost_CSPlus <- NA
+  DBehav_Wide$AlonePost_CSMinus <- NA
+  
+  DBehav_Wide$ParentPre_CSPlus[DBehav_Wide$Version_Parent=="V1"]   <-DBehav_Wide$Like.RESP.v1_Pre_CSPlus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$ParentPre_CSPlus[DBehav_Wide$Version_Parent=="V2"]   <-DBehav_Wide$Like.RESP.v2_Pre_CSPlus[DBehav_Wide$Version_Parent=="V2"]
+  DBehav_Wide$ParentPre_CSMinus[DBehav_Wide$Version_Parent=="V1"]  <-DBehav_Wide$Like.RESP.v1_Pre_CSMinus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$ParentPre_CSMinus[DBehav_Wide$Version_Parent=="V2"]  <-DBehav_Wide$Like.RESP.v2_Pre_CSMinus[DBehav_Wide$Version_Parent=="V2"]
+  DBehav_Wide$ParentPost_CSPlus[DBehav_Wide$Version_Parent=="V1"]  <-DBehav_Wide$Like.RESP.v1_Post_CSPlus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$ParentPost_CSPlus[DBehav_Wide$Version_Parent=="V2"]  <-DBehav_Wide$Like.RESP.v2_Post_CSPlus[DBehav_Wide$Version_Parent=="V2"]
+  DBehav_Wide$ParentPost_CSMinus[DBehav_Wide$Version_Parent=="V1"] <-DBehav_Wide$Like.RESP.v1_Post_CSMinus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$ParentPost_CSMinus[DBehav_Wide$Version_Parent=="V2"] <-DBehav_Wide$Like.RESP.v2_Post_CSMinus[DBehav_Wide$Version_Parent=="V2"]
+  
+  DBehav_Wide$AlonePre_CSPlus[DBehav_Wide$Version_Alone=="V1"]   <-DBehav_Wide$Like.RESP.v1_Pre_CSPlus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$AlonePre_CSPlus[DBehav_Wide$Version_Alone=="V2"]   <-DBehav_Wide$Like.RESP.v2_Pre_CSPlus[DBehav_Wide$Version_Alone=="V2"]
+  DBehav_Wide$AlonePre_CSMinus[DBehav_Wide$Version_Alone=="V1"]  <-DBehav_Wide$Like.RESP.v1_Pre_CSMinus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$AlonePre_CSMinus[DBehav_Wide$Version_Alone=="V2"]  <-DBehav_Wide$Like.RESP.v2_Pre_CSMinus[DBehav_Wide$Version_Alone=="V2"]
+  DBehav_Wide$AlonePost_CSPlus[DBehav_Wide$Version_Alone=="V1"]  <-DBehav_Wide$Like.RESP.v1_Post_CSPlus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$AlonePost_CSPlus[DBehav_Wide$Version_Alone=="V2"]  <-DBehav_Wide$Like.RESP.v2_Post_CSPlus[DBehav_Wide$Version_Alone=="V2"]
+  DBehav_Wide$AlonePost_CSMinus[DBehav_Wide$Version_Alone=="V1"] <-DBehav_Wide$Like.RESP.v1_Post_CSMinus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$AlonePost_CSMinus[DBehav_Wide$Version_Alone=="V2"] <-DBehav_Wide$Like.RESP.v2_Post_CSMinus[DBehav_Wide$Version_Alone=="V2"] 
+  
+#nervous question
+  DBehav_Wide$ParentPre_CSPlus.ner <- NA
+  DBehav_Wide$ParentPre_CSMinus.ner <- NA
+  DBehav_Wide$AlonePre_CSPlus.ner <- NA
+  DBehav_Wide$AlonePre_CSMinus.ner <- NA
+  
+  DBehav_Wide$ParentPost_CSPlus.ner <- NA
+  DBehav_Wide$ParentPost_CSMinus.ner <- NA
+  DBehav_Wide$AlonePost_CSPlus.ner <- NA
+  DBehav_Wide$AlonePost_CSMinus.ner <- NA
+  
+  DBehav_Wide$ParentPre_CSPlus.ner[DBehav_Wide$Version_Parent=="V1"]   <-DBehav_Wide$Nervous.RESP.v1_Pre_CSPlus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$ParentPre_CSPlus.ner[DBehav_Wide$Version_Parent=="V2"]   <-DBehav_Wide$Nervous.RESP.v2_Pre_CSPlus[DBehav_Wide$Version_Parent=="V2"]
+  DBehav_Wide$ParentPre_CSMinus.ner[DBehav_Wide$Version_Parent=="V1"]  <-DBehav_Wide$Nervous.RESP.v1_Pre_CSMinus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$ParentPre_CSMinus.ner[DBehav_Wide$Version_Parent=="V2"]  <-DBehav_Wide$Nervous.RESP.v2_Pre_CSMinus[DBehav_Wide$Version_Parent=="V2"]
+  DBehav_Wide$ParentPost_CSPlus.ner[DBehav_Wide$Version_Parent=="V1"]  <-DBehav_Wide$Nervous.RESP.v1_Post_CSPlus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$ParentPost_CSPlus.ner[DBehav_Wide$Version_Parent=="V2"]  <-DBehav_Wide$Nervous.RESP.v2_Post_CSPlus[DBehav_Wide$Version_Parent=="V2"]
+  DBehav_Wide$ParentPost_CSMinus.ner[DBehav_Wide$Version_Parent=="V1"] <-DBehav_Wide$Nervous.RESP.v1_Post_CSMinus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$ParentPost_CSMinus.ner[DBehav_Wide$Version_Parent=="V2"] <-DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Version_Parent=="V2"]
+  
+  DBehav_Wide$AlonePre_CSPlus.ner[DBehav_Wide$Version_Alone=="V1"]   <-DBehav_Wide$Nervous.RESP.v1_Pre_CSPlus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$AlonePre_CSPlus.ner[DBehav_Wide$Version_Alone=="V2"]   <-DBehav_Wide$Nervous.RESP.v2_Pre_CSPlus[DBehav_Wide$Version_Alone=="V2"]
+  DBehav_Wide$AlonePre_CSMinus.ner[DBehav_Wide$Version_Alone=="V1"]  <-DBehav_Wide$Nervous.RESP.v1_Pre_CSMinus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$AlonePre_CSMinus.ner[DBehav_Wide$Version_Alone=="V2"]  <-DBehav_Wide$Nervous.RESP.v2_Pre_CSMinus[DBehav_Wide$Version_Alone=="V2"]
+  DBehav_Wide$AlonePost_CSPlus.ner[DBehav_Wide$Version_Alone=="V1"]  <-DBehav_Wide$Nervous.RESP.v1_Post_CSPlus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$AlonePost_CSPlus.ner[DBehav_Wide$Version_Alone=="V2"]  <-DBehav_Wide$Nervous.RESP.v2_Post_CSPlus[DBehav_Wide$Version_Alone=="V2"]
+  DBehav_Wide$AlonePost_CSMinus.ner[DBehav_Wide$Version_Alone=="V1"] <-DBehav_Wide$Nervous.RESP.v1_Post_CSMinus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$AlonePost_CSMinus.ner[DBehav_Wide$Version_Alone=="V2"] <-DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Version_Alone=="V2"]
+```
+
+create difference scores- substract CS- from CS+ for pre and post ratings
+```{r}
+#first, create a variable for each run order (v1 and v2)
+#like question
+#a more positive score means that the CS+ was more liked than the CS-
+  DBehav_Wide$v1_Pre_PlusMinMinus  <- DBehav_Wide$Like.RESP.v1_Pre_CSPlus - DBehav_Wide$Like.RESP.v1_Pre_CSMinus
+  DBehav_Wide$v1_Post_PlusMinMinus <- DBehav_Wide$Like.RESP.v1_Post_CSPlus- DBehav_Wide$Like.RESP.v1_Post_CSMinus
+  DBehav_Wide$v2_Pre_PlusMinMinus  <- DBehav_Wide$Like.RESP.v2_Pre_CSPlus - DBehav_Wide$Like.RESP.v2_Pre_CSMinus
+  DBehav_Wide$v2_Post_PlusMinMinus <- DBehav_Wide$Like.RESP.v2_Post_CSPlus- DBehav_Wide$Like.RESP.v2_Post_CSMinus
+  
+#nervous question
+#a more positive score means that the CS+ made participants more nervous than the CS-
+  DBehav_Wide$v1_Pre_PlusMinMinus.ner  <- DBehav_Wide$Nervous.RESP.v1_Pre_CSPlus - DBehav_Wide$Nervous.RESP.v1_Pre_CSMinus
+  DBehav_Wide$v1_Post_PlusMinMinus.ner <- DBehav_Wide$Nervous.RESP.v1_Post_CSPlus- DBehav_Wide$Nervous.RESP.v1_Post_CSMinus
+  DBehav_Wide$v2_Pre_PlusMinMinus.ner  <- DBehav_Wide$Nervous.RESP.v2_Pre_CSPlus - DBehav_Wide$Nervous.RESP.v2_Pre_CSMinus
+  DBehav_Wide$v2_Post_PlusMinMinus.ner <- DBehav_Wide$Nervous.RESP.v2_Post_CSPlus- DBehav_Wide$Nervous.RESP.v2_Post_CSMinus
+  
+#next, create difference score according to condition (parent vs. alone) 
+  #Like question
+  DBehav_Wide$Parent_Pre_PlusMinMinus <- NA
+  DBehav_Wide$Alone_Pre_PlusMinMinus <- NA
+  DBehav_Wide$Parent_Post_PlusMinMinus <- NA
+  DBehav_Wide$Alone_Post_PlusMinMinus <- NA
+  
+  DBehav_Wide$Parent_Pre_PlusMinMinus[DBehav_Wide$Version_Parent=="V1"] <-DBehav_Wide$v1_Pre_PlusMinMinus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$Parent_Pre_PlusMinMinus[DBehav_Wide$Version_Parent=="V2"] <-DBehav_Wide$v2_Pre_PlusMinMinus[DBehav_Wide$Version_Parent=="V2"]
+  
+  DBehav_Wide$Alone_Pre_PlusMinMinus[DBehav_Wide$Version_Alone=="V1"] <-DBehav_Wide$v1_Pre_PlusMinMinus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$Alone_Pre_PlusMinMinus[DBehav_Wide$Version_Alone=="V2"] <-DBehav_Wide$v2_Pre_PlusMinMinus[DBehav_Wide$Version_Alone=="V2"]
+  
+  DBehav_Wide$Parent_Post_PlusMinMinus[DBehav_Wide$Version_Parent=="V1"] <-DBehav_Wide$v1_Post_PlusMinMinus[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$Parent_Post_PlusMinMinus[DBehav_Wide$Version_Parent=="V2"] <-DBehav_Wide$v2_Post_PlusMinMinus[DBehav_Wide$Version_Parent=="V2"]
+  
+  DBehav_Wide$Alone_Post_PlusMinMinus[DBehav_Wide$Version_Alone=="V1"] <-DBehav_Wide$v1_Post_PlusMinMinus[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$Alone_Post_PlusMinMinus[DBehav_Wide$Version_Alone=="V2"] <-DBehav_Wide$v2_Post_PlusMinMinus[DBehav_Wide$Version_Alone=="V2"]
+  
+  #Nervous question
+  DBehav_Wide$Parent_Pre_PlusMinMinus.ner <- NA
+  DBehav_Wide$Alone_Pre_PlusMinMinus.ner <- NA
+  DBehav_Wide$Parent_Post_PlusMinMinus.ner <- NA
+  DBehav_Wide$Alone_Post_PlusMinMinus.ner <- NA
+  
+  DBehav_Wide$Parent_Pre_PlusMinMinus.ner[DBehav_Wide$Version_Parent=="V1"] <-DBehav_Wide$v1_Pre_PlusMinMinus.ner[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$Parent_Pre_PlusMinMinus.ner[DBehav_Wide$Version_Parent=="V2"] <-DBehav_Wide$v2_Pre_PlusMinMinus.ner[DBehav_Wide$Version_Parent=="V2"]
+  
+  DBehav_Wide$Alone_Pre_PlusMinMinus.ner[DBehav_Wide$Version_Alone=="V1"] <-DBehav_Wide$v1_Pre_PlusMinMinus.ner[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$Alone_Pre_PlusMinMinus.ner[DBehav_Wide$Version_Alone=="V2"] <-DBehav_Wide$v2_Pre_PlusMinMinus.ner[DBehav_Wide$Version_Alone=="V2"]
+  
+  DBehav_Wide$Parent_Post_PlusMinMinus.ner[DBehav_Wide$Version_Parent=="V1"] <-DBehav_Wide$v1_Post_PlusMinMinus.ner[DBehav_Wide$Version_Parent=="V1"]
+  DBehav_Wide$Parent_Post_PlusMinMinus.ner[DBehav_Wide$Version_Parent=="V2"] <-DBehav_Wide$v2_Post_PlusMinMinus.ner[DBehav_Wide$Version_Parent=="V2"]
+  
+  DBehav_Wide$Alone_Post_PlusMinMinus.ner[DBehav_Wide$Version_Alone=="V1"] <-DBehav_Wide$v1_Post_PlusMinMinus.ner[DBehav_Wide$Version_Alone=="V1"]
+  DBehav_Wide$Alone_Post_PlusMinMinus.ner[DBehav_Wide$Version_Alone=="V2"] <-DBehav_Wide$v2_Post_PlusMinMinus.ner[DBehav_Wide$Version_Alone=="V2"]
+  
+```
+
+look at the variables' descriptive statistics
+```{r}
+#like question
+  describe(DBehav_Wide[,c("ParentPre_CSMinus","ParentPost_CSMinus","ParentPre_CSPlus","ParentPost_CSPlus",
+                          "AlonePre_CSMinus","AlonePost_CSMinus","AlonePre_CSPlus","AlonePost_CSPlus")])
+
+#nervous question
+  describe (DBehav_Wide[,c("ParentPre_CSMinus.ner","ParentPost_CSMinus.ner","ParentPre_CSPlus.ner","ParentPost_CSPlus.ner",
+                           "AlonePre_CSMinus.ner","AlonePost_CSMinus.ner","AlonePre_CSPlus.ner","AlonePost_CSPlus.ner")])
+
+#difference score-like question
+  describe(DBehav_Wide[,c("Parent_Pre_PlusMinMinus","Parent_Post_PlusMinMinus",
+                          "Alone_Pre_PlusMinMinus","Alone_Post_PlusMinMinus")])
+  
+#difference score-nervous question
+  describe(DBehav_Wide[,c("Parent_Pre_PlusMinMinus.ner","Parent_Post_PlusMinMinus.ner",
+                          "Alone_Pre_PlusMinMinus.ner","Alone_Post_PlusMinMinus.ner")])
+
+```
+
+preliminary analyses- relation with age and sex
+```{r}
+#relation with sex
+t.test (data = DBehav_Wide, Parent_Pre_PlusMinMinus ~ SEX)
+t.test (data = DBehav_Wide, Parent_Post_PlusMinMinus ~ SEX)
+t.test (data = DBehav_Wide, Alone_Pre_PlusMinMinus ~ SEX)
+t.test (data = DBehav_Wide, Alone_Post_PlusMinMinus ~ SEX)
+
+t.test (data = DBehav_Wide, Parent_Pre_PlusMinMinus.ner ~ SEX)
+t.test (data = DBehav_Wide, Parent_Post_PlusMinMinus.ner ~ SEX)
+t.test (data = DBehav_Wide, Alone_Pre_PlusMinMinus.ner ~ SEX)
+t.test (data = DBehav_Wide, Alone_Post_PlusMinMinus.ner ~ SEX)
+
+#relation with age
+cor.test (DBehav_Wide$Parent_Pre_PlusMinMinus, DBehav_Wide$MRI_AGE )
+cor.test (DBehav_Wide$Parent_Post_PlusMinMinus, DBehav_Wide$MRI_AGE )
+cor.test (DBehav_Wide$Alone_Pre_PlusMinMinus, DBehav_Wide$MRI_AGE )
+cor.test (DBehav_Wide$Alone_Post_PlusMinMinus, DBehav_Wide$MRI_AGE )
+
+cor.test (DBehav_Wide$Parent_Pre_PlusMinMinus.ner, DBehav_Wide$MRI_AGE )
+cor.test (DBehav_Wide$Parent_Post_PlusMinMinus.ner, DBehav_Wide$MRI_AGE )
+cor.test (DBehav_Wide$Alone_Pre_PlusMinMinus.ner, DBehav_Wide$MRI_AGE )
+cor.test (DBehav_Wide$Alone_Post_PlusMinMinus.ner, DBehav_Wide$MRI_AGE )
+
+```
+
+create a long format for the difference scores
+```{r}
+ DBehav_Longdif <- DBehav_Wide[,c("Subject",
+                                  "Parent_Pre_PlusMinMinus","Parent_Post_PlusMinMinus",
+                                  "Alone_Pre_PlusMinMinus","Alone_Post_PlusMinMinus",
+                                  "Parent_Pre_PlusMinMinus.ner","Parent_Post_PlusMinMinus.ner",
+                                  "Alone_Pre_PlusMinMinus.ner","Alone_Post_PlusMinMinus.ner")]
+
+#change vars names
+ colnames(DBehav_Longdif) <- gsub("_PlusMinMinus","",colnames(DBehav_Longdif))
+ colnames(DBehav_Longdif) <- gsub("_","",colnames(DBehav_Longdif))
+ col <- colnames(DBehav_Longdif)
+ colnames(DBehav_Longdif)[c(which(col=="ParentPre.ner"),which(col=="ParentPost.ner"),which(col=="AlonePre.ner"),which(col=="AlonePost.ner"))] <-
+                          c("NervousRESP_ParentPre","NervousRESP_ParentPost","NervousRESP_AlonePre","NervousRESP_AlonePost")
+ colnames(DBehav_Longdif)[c(which(col=="ParentPre"),which(col=="ParentPost"), which(col=="AlonePre"),which(col=="AlonePost"))] <-
+                          c("LikeRESP_ParentPre","LikeRESP_ParentPost","LikeRESP_AlonePre","LikeRESP_AlonePost")
+ 
+#turn to long format 
+ DBehav_Longdif <- reshape(DBehav_Longdif,idvar="Subject", timevar = "versiontime",
+                                varying=colnames(DBehav_Longdif)[2:9],direction="long", sep="_")
+  
+ DBehav_Longdif$version <-NA
+ DBehav_Longdif$version[DBehav_Longdif$versiontime=="ParentPre"|DBehav_Longdif$versiontime=="ParentPost"] <- "Parent"
+ DBehav_Longdif$version[DBehav_Longdif$versiontime=="AlonePre"|DBehav_Longdif$versiontime=="AlonePost"] <- "Alone"
+  
+ DBehav_Longdif$time <-NA
+ DBehav_Longdif$time[DBehav_Longdif$versiontime=="ParentPre"| DBehav_Longdif$versiontime=="AlonePre"] <- "1Pre"
+ DBehav_Longdif$time[DBehav_Longdif$versiontime=="ParentPost"| DBehav_Longdif$versiontime=="AlonePost"] <- "2Post"
+ 
+#verify that means stay the same after reshaping
+ describeBy(data=DBehav_Longdif, LikeRESP ~ time+version)  
+ describeBy(data=DBehav_Longdif, NervousRESP ~ time+version)
+#all good
+  
+```
+
+statistical test- like question
+```{r}
+
+#add sex and age information
+DBehav_Longdif <- merge(DBehav_Longdif,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+
+#two-way anova
+  LikeRESP_anovatest <- anova_test(data = DBehav_Longdif, dv = LikeRESP, wid = Subject,within = c(version, time), type=3, effect.size = "pes")
+  get_anova_table(LikeRESP_anovatest, correction ="GG")
+  
+#two-way anova with age and sex as covariates
+  LikeRESP_anovatest <- anova_test(data = DBehav_Longdif, dv = LikeRESP, wid = Subject,within = c(version, time),covariate=c(MRI_AGE,SEX), type=3, effect.size = "pes")
+  get_anova_table(LikeRESP_anovatest, correction ="GG")
+  
+#investigate simple effects - with ttests
+  t.test (DBehav_Wide$Parent_Post_PlusMinMinus,DBehav_Wide$Parent_Pre_PlusMinMinus,paired = TRUE, alternative = "two.sided")
+  t.test (DBehav_Wide$Alone_Post_PlusMinMinus, DBehav_Wide$Alone_Pre_PlusMinMinus,paired = TRUE, alternative = "two.sided")
+  #using Benjamin Hochberg calculator (https://www.sdmproject.com/utilities/?show=FDR), adjusted pvalue for the parent simple effect is p = .052
+  
+#just for verification: investigate simple effects with anova
+  LikeRESP_bycond <- DBehav_Longdif %>%
+    group_by(version) %>%
+    anova_test(dv = LikeRESP, wid = Subject, within = time) %>%
+    get_anova_table() %>%
+    adjust_pvalue(method = "hochberg") %>%
+    ungroup
+  
+  LikeRESP_bycond
+  
+#visualization
+#a) summarize overall group effects by condition
+  sum_like_dif_se <- summarySE(data = DBehav_Longdif, measurevar="LikeRESP", groupvars =c("version","time"),
+             na.rm = T, conf.interval = 0.95,.drop = TRUE)
+  
+#b) plot
+  LikeRESP_plot <- ggplot(data = as.data.frame(sum_like_dif_se), aes(x = time, y = LikeRESP, group=version, colour = version)) + 
+    geom_path(alpha = 0.2, size = 0.2) +
+    geom_errorbar(aes(ymin=LikeRESP-se, ymax=LikeRESP+se), width=.1, position=position_dodge(0.05)) +
+    geom_line(aes(x = time, y = LikeRESP,color = version), size = 2.5) +
+    labs (x = "time", y = "Like rating difference (CS+ > CS-) ") +
+    scale_x_discrete(labels=c("Pre-conditioning", "Post-conditioning")) +
+    ylim(-1, 1) +
+    theme_classic() +
+    scale_color_brewer(palette="Set2", labels = c("Absent", "Present")) +
+    scale_linetype_manual(values=c("dashed", "solid")) +
+    theme(axis.text = element_text(size = 25) , axis.title = element_text(size = 25))
+  LikeRESP_plot
+  
+  
+  
+  #try with lmer
+  model_like_int <-lmer(data= DBehav_Longdif, LikeRESP~version*time+SEX+MRI_AGE+(1|Subject))
+  model_like_noint <-lmer(data= DBehav_Longdif, LikeRESP~version+time+SEX+MRI_AGE+(1|Subject))
+  anova(model_like_int,model_like_noint)
+  summary(model_like_int)
+   
+```
+
+statistical test- nervous question
+```{r}
+
+#remove nervous data of subject 56 from the alone condition (was not asked this question in the parent condition due to experimenter error)
+DBehav_Longdif$NervousRESP[DBehav_Longdif$Subject==56] <- NA
+DBehav_Wide$Alone_Pre_PlusMinMinus.ner[DBehav_Wide$Subject==56] <- NA
+DBehav_Wide$Alone_Post_PlusMinMinus.ner[DBehav_Wide$Subject==56] <- NA
+
+
+#two-way anova
+  NervousRESP_anovatest <- anova_test(data = DBehav_Longdif, dv = NervousRESP, wid = Subject,within = c(version, time), type=3, effect.size = "pes")
+  get_anova_table(NervousRESP_anovatest, correction = "GG")
+  
+#two-way anova with age and sex as covariates
+  NervousRESP_anovatest <- anova_test(data = DBehav_Longdif, dv = NervousRESP, wid = Subject,within = c(version, time),covariate=c(MRI_AGE,SEX), type=3, effect.size = "pes")
+  get_anova_table(NervousRESP_anovatest, correction ="GG")
+  
+#investigate the main effect of time 
+#combine the two conditions together 
+  DBehav_Wide$Bothcond_Post_PlusMinMinus.ner <- rowMeans(DBehav_Wide[,c("Parent_Post_PlusMinMinus.ner","Alone_Post_PlusMinMinus.ner")],na.rm=T)
+  DBehav_Wide$Bothcond_Pre_PlusMinMinus.ner <- rowMeans(DBehav_Wide[,c("Parent_Pre_PlusMinMinus.ner","Alone_Pre_PlusMinMinus.ner")],na.rm=T)
+  
+  describe(DBehav_Wide[,c("Bothcond_Post_PlusMinMinus.ner","Bothcond_Pre_PlusMinMinus.ner")])
+  t.test (DBehav_Wide$Bothcond_Post_PlusMinMinus.ner,DBehav_Wide$Bothcond_Pre_PlusMinMinus.ner,paired = TRUE, alternative = "two.sided")
+  
+#investigate with lmer and age and sex
+  lmer_NervousRESP <-lmer(data= DBehav_Longdif, NervousRESP~version*time+MRI_AGE+SEX+(1|Subject))
+  summary(lmer_NervousRESP)
+
+  
+  
+#visualization
+#a) summarize overall group effects by condition
+  sum_nervous_dif_se <- summarySE(data = DBehav_Longdif, measurevar="NervousRESP", groupvars =c("version","time"),
+             na.rm = T, conf.interval = 0.95,.drop = TRUE)
+  
+#b) plot
+  NervousRESP_plot <- ggplot(data = as.data.frame(sum_nervous_dif_se), aes(x = time, y = NervousRESP, group=version, colour = version)) + 
+    geom_path(alpha = 0.2, size = 0.2) +
+    geom_errorbar(aes(ymin=NervousRESP-se, ymax=NervousRESP+se), width=.1, position=position_dodge(0.05)) +
+    geom_line(aes(x = time, y = NervousRESP,color = version), size = 2.5) +
+    labs (x = "time", y = "Nervousness rating difference (CS+ > CS-) ") +
+    scale_x_discrete(labels=c("Pre-conditioning", "Post-conditioning")) +
+    ylim(-1, 1) +
+    theme_classic() +
+    scale_color_brewer(palette="Set2", labels = c("Absent", "Present")) +
+    scale_linetype_manual(values=c("dashed", "solid")) +
+    theme(axis.text = element_text(size = 25) , axis.title = element_text(size = 25))
+  NervousRESP_plot
+```
+
+create a long format of parent/alone information to attach to fMRI data
+```{r}
+DParentOrderLong <- DParentInfo[,c("Subject","Scan_Parent","Scan_Alone")]
+DParentOrderLong <- reshape(DParentOrderLong, idvar="Subject", timevar="Parent_Alone", 
+                             varying=colnames(DParentOrderLong)[2:3],direction="long",sep="_")
+colnames(DParentOrderLong)[colnames(DParentOrderLong)=="Scan"] <- "order"
+  
+```
+
+
+fMRI analyses: Region-of-Interests- left amygdala (CS+ vs. CS- contrast)
+```{r}
+#import file
+  DROI_L_amygdala <- read.csv("../data/left_amygdala_ROI_results_validfMRI_subj.csv")
+#attach parent-alone information
+  DROI_L_amygdala <- merge(DROI_L_amygdala,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+#turn back to wide format
+  DROI_L_amygdala_wide <- reshape(DROI_L_amygdala, timevar = "Parent_Alone",idvar="Subject",direction="wide")
+  
+#look at the descriptive statistics
+  describe(DROI_L_amygdala_wide$left_amygdala_activation.Parent)
+  describe(DROI_L_amygdala_wide$left_amygdala_activation.Alone)
+  
+#ttest
+  ttest_L_amygdala <- t.test (DROI_L_amygdala_wide$left_amygdala_activation.Parent,
+                      DROI_L_amygdala_wide$left_amygdala_activation.Alone,
+                      paired = TRUE, alternative = "two.sided")
+  ttest_L_amygdala
+```
+fMRI analyses: Region-of-Interests- right amygdala (CS+ vs. CS- contrast)
+```{r}
+DROI_R_amygdala <- read.csv("../data/right_amygdala_ROI_results_validfMRI_subj.csv")
+#attach parent-alone information
+  DROI_R_amygdala <- merge(DROI_R_amygdala,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+#turn back to wide format
+  DROI_R_amygdala_wide <- reshape(DROI_R_amygdala, timevar = "Parent_Alone",idvar="Subject",direction="wide")
+  
+#look at the descriptive statistics
+  describe(DROI_R_amygdala_wide$right_amygdala_activation.Parent)
+  describe(DROI_R_amygdala_wide$right_amygdala_activation.Alone)
+  
+#ttest
+  ttest_R_amygdala <- t.test (DROI_R_amygdala_wide$right_amygdala_activation.Parent,
+                      DROI_R_amygdala_wide$right_amygdala_activation.Alone,
+                      paired = TRUE, alternative = "two.sided")
+  ttest_R_amygdala
+```
+
+
+fMRI analyses: Region-of-Interests- mPFC (CS+ vs. CS- contrast)
+```{r}
+#import file
+  DROI_mPFC <- read.csv("../data/BA10_BA24_BA32_z_-10-20_ROI_results_validfMRI_subj.csv")
+#attach parent-alone information
+  DROI_mPFC <- merge(DROI_mPFC,DParentOrderLong, by=c("Subject","order"),all.x=T, all.y=F)
+#turn back to wide format
+  DROI_mPFC_wide <- reshape(DROI_mPFC, timevar = "Parent_Alone", idvar="Subject",direction="wide")
+  
+#look at the descriptive statistics
+  describe(DROI_mPFC_wide$mPFC_activation.Parent)
+  describe(DROI_mPFC_wide$mPFC_activation.Alone)
+  
+#ttest
+  ttest_mPFC <- t.test (DROI_mPFC_wide$mPFC_activation.Parent,
+                DROI_mPFC_wide$mPFC_activation.Alone,
+                paired = TRUE, alternative = "two.sided")
+  ttest_mPFC
+  
+#paired-samples cohen's D effect size
+  cohend_DROI_mPFC <- ttest_mPFC$statistic/sqrt(length(unique(DROI_mPFC$Subject))) #t/sqrt(n)
+
+#examine with lmer  
+  summary(lmer(data= DROI_mPFC, mPFC_activation~Parent_Alone +(1|Subject)))
+  summary(lmer(data= DROI_mPFC, mPFC_activation~order +(1|Subject)))
+  summary(lmer(data= DROI_mPFC, mPFC_activation~Parent_Alone*order +(1|Subject)))
+  summary(lmer(data= DROI_mPFC, mPFC_activation~(1|Subject)))
+  
+```
+
+check if behavioral results correlate with neural results
+```{r}
+colnames(DBehav_Longdif)[which(colnames(DBehav_Longdif)=="version")] <- "Parent_Alone"
+DBehav_Longdif <- merge(DBehav_Longdif,DROI_mPFC, by=c("Subject","Parent_Alone"),all.x=T, all.y=F)
+DBehav_Wide <- merge(DBehav_Wide,DROI_mPFC_wide[,c("Subject","mPFC_activation.Alone","mPFC_activation.Parent")], by ="Subject", all.x=T, all.y=F)
+
+cor.test(DBehav_Wide$Alone_Post_PlusMinMinus,DBehav_Wide$mPFC_activation.Alone)
+cor.test(DBehav_Wide$Alone_Post_PlusMinMinus.ner,DBehav_Wide$mPFC_activation.Alone)
+cor.test(DBehav_Wide$Parent_Post_PlusMinMinus,DBehav_Wide$mPFC_activation.Parent)
+cor.test(DBehav_Wide$Parent_Post_PlusMinMinus.ner,DBehav_Wide$mPFC_activation.Parent)
+
+summary(lmer(data=DBehav_Longdif, LikeRESP ~ Parent_Alone*time*mPFC_activation+(1|Subject)))
+
+#a higher score indicates that after conditioning the CS+ makes children more nervous than the cS- compared to before conditioning
+DBehav_Wide$difofdif.ner.Alone <-DBehav_Wide$Alone_Post_PlusMinMinus.ner-DBehav_Wide$Alone_Pre_PlusMinMinus.ner
+cor.test(DBehav_Wide$difofdif.ner.Alone,DBehav_Wide$mPFC_activation.Alone)
+
+DBehav_Wide$difofdif.ner.Parent <-DBehav_Wide$Parent_Post_PlusMinMinus.ner-DBehav_Wide$Parent_Pre_PlusMinMinus.ner
+cor.test(DBehav_Wide$difofdif.ner.Parent,DBehav_Wide$mPFC_activation.Parent)
+
+#a higher score indicates that after conditioning children like the CS+ more than the CS- compared to before conditioning
+DBehav_Wide$difofdif.Alone <-DBehav_Wide$Alone_Post_PlusMinMinus-DBehav_Wide$Alone_Pre_PlusMinMinus
+cor.test(DBehav_Wide$difofdif.Alone,DBehav_Wide$mPFC_activation.Alone)
+
+DBehav_Wide$difofdif.Parent <-DBehav_Wide$Parent_Post_PlusMinMinus-DBehav_Wide$Parent_Pre_PlusMinMinus
+cor.test(DBehav_Wide$difofdif.Parent,DBehav_Wide$mPFC_activation.Parent)
+
+#a higher score means higher mPFC activation when alone compare to when with parent
+DBehav_Wide$mPFC_dif <- DBehav_Wide$mPFC_activation.Alone-DBehav_Wide$mPFC_activation.Parent
+cor.test(DBehav_Wide$mPFC_dif,DBehav_Wide$difofdif.ner.Parent)
+DBehav_Wide <- DBehav_Wide %>%
+  mutate(mPFC_dif_bin = ifelse (mPFC_dif<0,-1,1))
+
+describeBy (data=DBehav_Wide, Parent_Post_PlusMinMinus~mPFC_dif_bin)
+t.test(data=DBehav_Wide, Parent_Post_PlusMinMinus~mPFC_dif_bin)
+t.test(data=DBehav_Wide, Parent_Pre_PlusMinMinus~mPFC_dif_bin)
+
+t.test(data=DBehav_Wide, Alone_Post_PlusMinMinus~mPFC_dif_bin)
+t.test(data=DBehav_Wide, Alone_Pre_PlusMinMinus~mPFC_dif_bin)
+
+t.test(data=DBehav_Wide, Parent_Post_PlusMinMinus.ner~mPFC_dif_bin)
+t.test(data=DBehav_Wide, Parent_Pre_PlusMinMinus.ner~mPFC_dif_bin)
+
+t.test(data=DBehav_Wide, Alone_Post_PlusMinMinus.ner~mPFC_dif_bin)
+t.test(data=DBehav_Wide, Alone_Pre_PlusMinMinus.ner~mPFC_dif_bin)
+
+t.test(data=DBehav_Wide, difofdif.Parent~mPFC_dif_bin)
+t.test(data=DBehav_Wide, difofdif.Alone~mPFC_dif_bin)
+
+```
+
+
+report descriptive statistics only for participants who were included in the fMRI analyses
+```{r}
+DROI_L_amygdala_wide <- merge(DROI_L_amygdala_wide,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+
+#age
+  describe(DROI_L_amygdala_wide$MRI_AGE)
+  sd(DROI_L_amygdala_wide$MRI_AGE)
+#sex
+  summary(as.factor(DROI_L_amygdala_wide$SEX))
+  
+#do the same thing for the long format
+   DROI_L_amygdala <- merge(DROI_L_amygdala,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+   
+#scale sex and age so the intercept will have a meaning (no need to do that for parent_alone because it is completely balanced)
+  DROI_L_amygdala <- DROI_L_amygdala %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F))
+   
+#test hypothesis contoling for age and sex
+   lmer_L_amygdala <- lmer(data= DROI_L_amygdala, left_amygdala_activation~Parent_Alone_num_c+MRI_AGE_c+SEX_num_c+(1|Subject))
+   
+   lmer_L_amygdala_noparalone <- lmer(data= DROI_L_amygdala, left_amygdala_activation~MRI_AGE_c+SEX_num_c+(1|Subject))
+    
+    anova(lmer_L_amygdala,lmer_L_amygdala_noparalone)
+   
+   lmer_L_amygdala_standard <- datawizard::standardize(lmer_L_amygdala)
+   
+   
+#right amygdala
+   #do the same thing for the long format
+   DROI_R_amygdala <- merge(DROI_R_amygdala,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+   
+#scale sex and age so the intercept will have a meaning (no need to do that for parent_alone because it is completely balanced)
+  DROI_R_amygdala <- DROI_R_amygdala %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F))
+   
+#test hypothesis controlling for age and sex
+   lmer_R_amygdala <- lmer(data= DROI_R_amygdala, right_amygdala_activation~Parent_Alone_num_c+MRI_AGE_c+SEX_num_c+(1|Subject))
+   
+    lmer_R_amygdala_noparalone <- lmer(data= DROI_R_amygdala, right_amygdala_activation~MRI_AGE_c+SEX_num_c+(1|Subject))
+    
+    anova(lmer_R_amygdala,lmer_R_amygdala_noparalone)
+   
+   lmer_R_amygdala_standard <- datawizard::standardize(lmer_R_amygdala)
+  
+  
+  DROI_R_amygdala_wide <- merge(DROI_R_amygdala_wide,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+  
+  DROI_mPFC_wide <- merge(DROI_mPFC_wide,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+  
+  DROI_mPFC <- merge(DROI_mPFC,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+  
+#check again the model with sex and age
+  summary(lmer(data= DROI_mPFC, mPFC_activation~Parent_Alone+MRI_AGE+SEX+(1|Subject)))
+  summary(lmer(data= DROI_mPFC, mPFC_activation~Parent_Alone*MRI_AGE+SEX+(1|Subject)))
+#look at sex differences 
+  describeBy(data=DROI_mPFC, mPFC_activation~SEX)
+  
+#check relations of mPFC actvivation with sex and age
+  cor.test(DROI_mPFC$mPFC_activation,DROI_mPFC$MRI_AGE)
+  t_test(data=DROI_mPFC, mPFC_activation~SEX, paired=F)
+  
+  
+#two-way anova with sex as a covariate
+  mPFC_anovatest <- anova_test(data = DROI_mPFC, dv = mPFC_activation, wid = Subject,within = c(Parent_Alone),covariate=c(MRI_AGE), type=3, effect.size = "pes")
+  get_anova_table(mPFC_anovatest, correction ="GG")
+#something is very weird in these results and doesn't make sense
+  
+#scale sex and age so the intercept will have a meaning (no need to do that for parent_alone because it is completely balanced)
+  DROI_mPFC <- DROI_mPFC %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F))
+  
+  lmer_mPFC <-lmer(data= DROI_mPFC, mPFC_activation~Parent_Alone_num_c+MRI_AGE_c+SEX_num_c+(1|Subject))
+  
+  lmer_mPFC_standard <- datawizard::standardize(lmer_mPFC)
+  
+   lmer_mPFC_noParAlon <-lmer(data= DROI_mPFC, mPFC_activation~MRI_AGE_c+SEX_num_c+(1|Subject))
+   lmer_mPFC_noParAlon_standard <- datawizard::standardize(lmer_mPFC_noParAlon)
+   
+   lmer_mPFC_null <-lmer(data= DROI_mPFC, mPFC_activation~(1|Subject))
+   lmer_mPFC_null_standard <- datawizard::standardize(lmer_mPFC_null)
+   
+   anova(lmer_mPFC,lmer_mPFC_noParAlon)
+   
+  #with aov function
+   aov_mPFC <-aov(data= DROI_mPFC, mPFC_activation~Parent_Alone_num_c+SEX_num_c+(1|Subject))
+
+```
+
+MRI results visualization
+```{r}
+mPFC_plot <- ggplot(data = DROI_mPFC, aes(x = Parent_Alone, y = mPFC_activation, fill = Parent_Alone))+
+  geom_boxplot()+
+  stat_summary(fun = "mean", geom = "point",size = 2)+
+  geom_jitter(size = 1, fill="black")+
+  theme_classic() +
+  scale_color_brewer(palette="Set2", aesthetics="fill")+
+  labs (x = "Parental context", y = "mPFC activation (CS+ > CS-) ") +
+    scale_x_discrete(labels=c("Parent absent", "Parent present")) +
+    theme(axis.text = element_text(size = 25) , axis.title = element_text(size = 25))
+  
+
+#seems like there are outliers. let's find them
+boxplot.stats(DROI_mPFC_wide$mPFC_activation.Parent)
+boxplot.stats(DROI_mPFC_wide$mPFC_activation.Alone)
+
+
+#spaghetti plots
+mPFC_plot_spag <- ggplot(data = DROI_mPFC, 
+                               aes(group=Subject, x = Parent_Alone,y = mPFC_activation, color=Parent_Alone))+
+  geom_jitter(width = 0.05, alpha = 0.3) +
+  geom_line(alpha = 0.2, size = 0.4, color="black")+
+   stat_summary(fun=mean,geom="line",lwd=1,color="black",aes(group=1))+
+  scale_color_brewer(palette="Set2")+
+  theme_classic()
+
+#see how many show reduce and how many show increase
+DROI_mPFC_wide <- DROI_mPFC_wide %>%
+  mutate(trend = ifelse(mPFC_activation.Parent>mPFC_activation.Alone,1,
+                        ifelse(mPFC_activation.Parent<mPFC_activation.Alone,-1,NA)))
+  
+
+mPFC_plot_spag <- ggplot(data = DROI_mPFC, 
+                               aes(group=Subject, x = Parent_Alone,y = mPFC_activation, color=Parent_Alone))+
+  geom_jitter(width = 0.05, alpha = 0.3) +
+  geom_line(alpha = 0.2, size = 0.4, color="black")+
+   stat_summary(fun=mean,geom="line",lwd=1,color="black",aes(group=1))+
+  scale_color_brewer(palette="Set2")+
+  theme_classic()
+
+
+#now without individual lines
+#a) summarize overall group effects by condition
+  sum_mPFC_se <- summarySE(data = DROI_mPFC, measurevar="mPFC_activation", groupvars =c("Parent_Alone"),
+             na.rm = T, conf.interval = 0.95,.drop = TRUE)
+
+mPFC_plot_onlyaverage <- ggplot(data = sum_mPFC_se, 
+                               aes(x = Parent_Alone,y = mPFC_activation))+
+  geom_errorbar(aes(ymin=mPFC_activation-se, ymax=mPFC_activation+se), width=.1, position=position_dodge(0.05)) +
+  stat_summary(fun=mean,geom="line",lwd=1.8,color="black",aes(group=1))+
+  scale_y_continuous("mPFC activation", limits = c(-.5, .5), breaks = seq(-.5,.5,.1)) + 
+  theme_classic()+
+  theme(axis.text = element_text(size = 25) , axis.title = element_text(size = 25))
+  
+
+```
+
+check the mPFC results without the observations considered outline according to the box plot
+```{r}
+DROI_mPFC_wide_noboxplotoutliers <- DROI_mPFC_wide[DROI_mPFC_wide$Subject!= 4 & DROI_mPFC_wide$Subject != 25 & DROI_mPFC_wide$Subject != 77,]
+
+#look at the descriptive statistics
+describe(DROI_mPFC_wide_noboxplotoutliers$mPFC_activation.Parent)
+describe(DROI_mPFC_wide_noboxplotoutliers$mPFC_activation.Alone)
+
+#ttest
+  ttest_mPFC_noboxplotoutliers <- t.test (DROI_mPFC_wide_noboxplotoutliers$mPFC_activation.Parent,
+                DROI_mPFC_wide_noboxplotoutliers$mPFC_activation.Alone,
+                paired = TRUE, alternative = "two.sided")
+  ttest_mPFC_noboxplotoutliers
+  
+  #paired-samples cohen's D effect size
+  cohend_DROI_mPFC_noboxplotoutliers <- ttest_mPFC_noboxplotoutliers$statistic/sqrt(nrow(DROI_mPFC_wide_noboxplotoutliers)) #t/sqrt(n)  
+  
+#do the same with lmer
+DROI_mPFC_noboxplotoutliers <- DROI_mPFC[DROI_mPFC$Subject!= 4 & DROI_mPFC$Subject != 25 & DROI_mPFC$Subject != 77,]
+
+lmer_mPFC <-lmer(data= DROI_mPFC_noboxplotoutliers, mPFC_activation~Parent_Alone_num_c+MRI_AGE_c+SEX_num_c+(1|Subject))
+  
+   lmer_mPFC_noParAlon <-lmer(data= DROI_mPFC_noboxplotoutliers, mPFC_activation~MRI_AGE_c+SEX_num_c+(1|Subject))
+   
+   anova(lmer_mPFC,lmer_mPFC_noParAlon)
+
+  
+#visualize witout outliers to check
+  DROI_mPFC_noboxplotoutliers <- DROI_mPFC[DROI_mPFC$Subject!= 4 & DROI_mPFC$Subject != 25 & DROI_mPFC$Subject != 77,]
+  
+  mPFC_plot_noboxplotoutliers <- ggplot(data = DROI_mPFC_noboxplotoutliers, aes(x = Parent_Alone, y = mPFC_activation, fill = Parent_Alone))+
+  geom_boxplot()+
+  stat_summary(fun = "mean", geom = "point",size = 2)+
+  geom_jitter(size = 0.3, fill="black")+
+  theme_classic() +
+  scale_color_brewer(palette="Set2", aesthetics="fill")+
+  labs (x = "Parental context", y = "mPFC activation (CS+ > CS-) ") +
+    scale_x_discrete(labels=c("Parent absent", "Parent present")) +
+    theme(axis.text = element_text(size = 25) , axis.title = element_text(size = 25))
+  
+```
+
+#organize ROI contrasts file for multiple contrasts- left centromedial amygdala
+```{r}
+#contrast 1
+DROI_50thr_cmamyg_L_cond1 <- read.csv ("../data/ROI_50thr_cmamyg_L_cond1.csv")
+valid_subj <- read.csv ("../data/valid_participant_list.csv")
+DROI_50thr_cmamyg_L_cond1$Subject <- rep(valid_subj$Subject, each=2)
+DROI_50thr_cmamyg_L_cond1$Subject <- as.numeric(gsub("sub-","",DROI_50thr_cmamyg_L_cond1$Subject))
+DROI_50thr_cmamyg_L_cond1$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_50thr_cmamyg_L_cond1 <- reshape(DROI_50thr_cmamyg_L_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_50thr_cmamyg_L_cond1$order <- "cond1"
+
+#contrast 2
+DROI_50thr_cmamyg_L_cond2 <- read.csv ("../data/ROI_50thr_cmamyg_L_cond2.csv")
+valid_subj <- read.csv ("../data/valid_participant_list.csv")
+DROI_50thr_cmamyg_L_cond2$Subject <- rep(valid_subj$Subject, each=2)
+DROI_50thr_cmamyg_L_cond2$Subject <- as.numeric(gsub("sub-","",DROI_50thr_cmamyg_L_cond2$Subject))
+DROI_50thr_cmamyg_L_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_50thr_cmamyg_L_cond2 <- reshape(DROI_50thr_cmamyg_L_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_50thr_cmamyg_L_cond2$order <- "cond2"
+
+#combine conditions
+DROI_50thr_cmamyg_L <- rbind(DROI_50thr_cmamyg_L_cond1,DROI_50thr_cmamyg_L_cond2)
+
+#merge with parent/alone version
+DROI_50thr_cmamyg_L <- merge(DROI_50thr_cmamyg_L,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_50thr_cmamyg_L <- merge(DROI_50thr_cmamyg_L,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#remove subject (invalid because has 117 TRs)
+ DROI_50thr_cmamyg_L <- DROI_50thr_cmamyg_L[-(which(DROI_50thr_cmamyg_L$Subject==66)),]
+
+#turn to numeric and scale
+ DROI_50thr_cmamyg_L <- DROI_50thr_cmamyg_L %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F))
+
+```
+
+
+
+#test 50th contrasts- left centromedial amygdala
+```{r}
+#look at the descriptive statistics
+describeBy (data= DROI_50thr_cmamyg_L, cmamyg_L_activation.noise_baseline~Parent_Alone)
+
+#check there are no order effects
+lmer_cmamyg_L_noise_baseline_order <-lmer(data= DROI_50thr_cmamyg_L, cmamyg_L_activation.noise_baseline~order*Parent_Alone + (1|Subject))
+report(lmer_cmamyg_L_noise_baseline_order)
+
+#analysis with sex and age 
+lmer_cmamyg_L_noise_baseline <-lmer(data= DROI_50thr_cmamyg_L, cmamyg_L_activation.noise_baseline~SEX_num_c+Parent_Alone_num_c*MRI_AGE_c+(1|Subject))
+report(lmer_cmamyg_L_noise_baseline)
+
+#divide the sample according to children (under 11) and adolescents (age cutoff according to gee 2014)
+
+DROI_50thr_cmamyg_L <- DROI_50thr_cmamyg_L %>%
+  mutate(age_group = ifelse(MRI_AGE<11,0,1),
+         age_group_c = scale(age_group,scale=F))
+
+#check separately for children and adolescents
+lmer_cmamyg_L_noise_baseline_children <-lmer(data= DROI_50thr_cmamyg_L[DROI_50thr_cmamyg_L$age_group==0,], cmamyg_L_activation.noise_baseline~Parent_Alone_num_c+SEX_num_c + (1|Subject))
+report(lmer_cmamyg_L_noise_baseline_children)
+describe(data=DROI_50thr_cmamyg_L[DROI_50thr_cmamyg_L$age_group==0,], cmamyg_L_activation.noise_baseline~Parent_Alone)
+
+lmer_cmamyg_L_noise_baseline_adolescents <-lmer(data= DROI_50thr_cmamyg_L[DROI_50thr_cmamyg_L$age_group==1,], cmamyg_L_activation.noise_baseline~Parent_Alone_num_c+SEX_num_c + (1|Subject))
+report(lmer_cmamyg_L_noise_baseline_adolescents)
+describe(data=DROI_50thr_cmamyg_L[DROI_50thr_cmamyg_L$age_group==1,], cmamyg_L_activation.noise_baseline~Parent_Alone)
+  
+#check plus vs noise contrast
+describeBy (data= DROI_50thr_cmamyg_L, cmamyg_L_activation.plus_minus~Parent_Alone)
+
+lmer_cmamyg_L_plus_minus <-lmer(data= DROI_50thr_cmamyg_L, cmamyg_L_activation.plus_minus~SEX_num_c+Parent_Alone_num_c*MRI_AGE_c+(1|Subject))
+report(lmer_cmamyg_L_plus_minus)
+```
+
+left centromedial amygdala visualization
+```{r}
+#spaghetti plots
+cmamyg_l_noise_baseline_plot_children <- ggplot(data = DROI_50thr_cmamyg_L[DROI_50thr_cmamyg_L$age_group==0,], 
+                               aes(group=Subject, x = Parent_Alone,y = cmamyg_L_activation.noise_baseline, color=Parent_Alone))+
+  geom_jitter(width = 0.05, alpha = 0.3) +
+  geom_line(alpha = 0.2, size = 0.4, color="black")+
+   stat_summary(fun=mean,geom="line",lwd=1,color="black",aes(group=1))+
+  scale_color_brewer(palette="Set2")+
+  theme_classic()
+
+cmamyg_l_noise_baseline_plot_adolescents <- ggplot(data = DROI_50thr_cmamyg_L[DROI_50thr_cmamyg_L$age_group==1,], 
+                               aes(group=Subject, x = Parent_Alone,y = cmamyg_L_activation.noise_baseline, color=Parent_Alone))+
+  geom_jitter(width = 0.05, alpha = 0.3) +
+  geom_line(alpha = 0.2, size = 0.4, color="black")+
+   stat_summary(fun=mean,geom="line",lwd=1,color="black",aes(group=1))+
+  scale_color_brewer(palette="Set2")+
+  theme_classic()
+```
+
+
+
+#organize ROI contrasts file -right centromedial amygdala
+```{r}
+#contrast 1
+DROI_50thr_cmamyg_R_cond1 <- read.csv ("../data/ROI_50thr_cmamyg_R_cond1.csv")
+DROI_50thr_cmamyg_R_cond1$Subject <- rep(valid_subj$Subject, each=2)
+DROI_50thr_cmamyg_R_cond1$Subject <- as.numeric(gsub("sub-","",DROI_50thr_cmamyg_R_cond1$Subject))
+DROI_50thr_cmamyg_R_cond1$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_50thr_cmamyg_R_cond1 <- reshape(DROI_50thr_cmamyg_R_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_50thr_cmamyg_R_cond1$order <- "cond1"
+
+#contrast 2
+DROI_50thr_cmamyg_R_cond2 <- read.csv ("../data/ROI_50thr_cmamyg_R_cond2.csv")
+valid_subj <- read.csv ("../data/valid_participant_list.csv")
+DROI_50thr_cmamyg_R_cond2$Subject <- rep(valid_subj$Subject, each=2)
+DROI_50thr_cmamyg_R_cond2$Subject <- as.numeric(gsub("sub-","",DROI_50thr_cmamyg_R_cond2$Subject))
+DROI_50thr_cmamyg_R_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_50thr_cmamyg_R_cond2 <- reshape(DROI_50thr_cmamyg_R_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_50thr_cmamyg_R_cond2$order <- "cond2"
+
+#combine conditions
+DROI_50thr_cmamyg_R <- rbind(DROI_50thr_cmamyg_R_cond1,DROI_50thr_cmamyg_R_cond2)
+
+#merge with parent/alone version
+DROI_50thr_cmamyg_R <- merge(DROI_50thr_cmamyg_R,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_50thr_cmamyg_R <- merge(DROI_50thr_cmamyg_R,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#remove subject 066 (invalid because has 117 TRs)
+ DROI_50thr_cmamyg_R <- DROI_50thr_cmamyg_R[-(which(DROI_50thr_cmamyg_R$Subject==66)),]
+
+#turn to numeric and scale
+ DROI_50thr_cmamyg_R <- DROI_50thr_cmamyg_R %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F))
+
+```
+
+
+#test 50th contrasts- right centromedial amygdala
+```{r}
+#look at the descriptive statistics
+describeBy (data= DROI_50thr_cmamyg_R, cmamyg_r_activation.noise_baseline~Parent_Alone)
+
+#check there are no order effects
+lmer_cmamyg_R_noise_baseline_order <-lmer(data= DROI_50thr_cmamyg_R, cmamyg_r_activation.noise_baseline~order*Parent_Alone + (1|Subject))
+report(lmer_cmamyg_R_noise_baseline_order)
+
+#analysis with sex and age 
+lmer_cmamyg_R_noise_baseline <-lmer(data= DROI_50thr_cmamyg_R, cmamyg_r_activation.noise_baseline~SEX_num_c+MRI_AGE_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_cmamyg_R_noise_baseline)
+
+  
+#check plus vs noise contrast
+describeBy (data= DROI_50thr_cmamyg_R, cmamyg_r_activation.plus_minus~Parent_Alone)
+
+#check there are no order effects
+lmer_cmamyg_R_plus_minus_order <-lmer(data= DROI_50thr_cmamyg_R, cmamyg_r_activation.plus_minus~order*Parent_Alone + (1|Subject))
+report(lmer_cmamyg_R_plus_minus_order)
+
+#check with age and sex
+lmer_cmamyg_R_plus_minus <-lmer(data= DROI_50thr_cmamyg_R, cmamyg_r_activation.plus_minus~SEX_num_c+MRI_AGE_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_cmamyg_R_plus_minus)
+
+#divide the sample according to children (under 11) and adolescents (age cutoff according to gee 2014)
+DROI_50thr_cmamyg_R <- DROI_50thr_cmamyg_R %>%
+  mutate(age_group = ifelse(MRI_AGE<11,0,1),
+         age_group_c = scale(age_group,scale=F))
+
+#check separately for children and adolescents
+lmer_cmamyg_R_plus_minus_children <-lmer(data= DROI_50thr_cmamyg_R[DROI_50thr_cmamyg_R$age_group==0,], cmamyg_r_activation.plus_minus~Parent_Alone_num_c+SEX_num_c + (1|Subject))
+report(lmer_cmamyg_R_plus_minus_children)
+describe(data=DROI_50thr_cmamyg_R[DROI_50thr_cmamyg_R$age_group==0,], cmamyg_r_activation.plus_minus~Parent_Alone)
+
+
+lmer_cmamyg_R_plus_minus_adolescents <-lmer(data= DROI_50thr_cmamyg_R[DROI_50thr_cmamyg_R$age_group==1,], cmamyg_r_activation.plus_minus~Parent_Alone_num_c+SEX_num_c + (1|Subject))
+report(lmer_cmamyg_R_plus_minus_adolescents)
+describe(data=DROI_50thr_cmamyg_R[DROI_50thr_cmamyg_R$age_group==1,], cmamyg_r_activation.plus_minus~Parent_Alone)
+
+```
+
+right centromedial amygdala visualization
+```{r}
+#spaghetti plots
+
+#all the sample
+cmamyg_r_noise_baseline_plot <- ggplot(data = DROI_50thr_cmamyg_R, 
+                               aes(group=Subject, x = Parent_Alone,y = cmamyg_r_activation.noise_baseline, color=Parent_Alone))+
+  geom_jitter(width = 0.05, alpha = 0.3) +
+  geom_line(alpha = 0.2, size = 0.4, color="black")+
+   stat_summary(fun=mean,geom="line",lwd=1,color="black",aes(group=1))+
+  scale_color_brewer(palette="Set2")+
+  theme_classic()
+
+#children- plus vs. minus
+cmamyg_r_plus_minus_plot_children <- ggplot(data = DROI_50thr_cmamyg_R[DROI_50thr_cmamyg_R$age_group==0,], 
+                               aes(group=Subject, x = Parent_Alone,y = cmamyg_r_activation.plus_minus, color=Parent_Alone))+
+  geom_jitter(width = 0.05, alpha = 0.3) +
+  geom_line(alpha = 0.2, size = 0.4, color="black")+
+   stat_summary(fun=mean,geom="line",lwd=1,color="black",aes(group=1))+
+  scale_color_brewer(palette="Set2")+
+  theme_classic()
+
+#adolescents- plus vs. minus
+cmamyg_r_noise_baseline_plot_adolescents <- ggplot(data = DROI_50thr_cmamyg_R[DROI_50thr_cmamyg_R$age_group==1,], 
+                               aes(group=Subject, x = Parent_Alone,y = cmamyg_r_activation.plus_minus, color=Parent_Alone))+
+  geom_jitter(width = 0.05, alpha = 0.3) +
+  geom_line(alpha = 0.2, size = 0.4, color="black")+
+   stat_summary(fun=mean,geom="line",lwd=1,color="black",aes(group=1))+
+  scale_color_brewer(palette="Set2")+
+  theme_classic()
+```
+
+
+
+#organize ROI contrasts file -right superficial amygdala
+```{r}
+#contrast 1
+DROI_50thr_supamyg_R_cond1 <- read.csv ("../data/ROI_50thr_supamyg_R_cond1.csv")
+DROI_50thr_supamyg_R_cond1$Subject <- rep(valid_subj$Subject, each=2)
+DROI_50thr_supamyg_R_cond1$Subject <- as.numeric(gsub("sub-","",DROI_50thr_supamyg_R_cond1$Subject))
+DROI_50thr_supamyg_R_cond1$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_50thr_supamyg_R_cond1 <- reshape(DROI_50thr_supamyg_R_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_50thr_supamyg_R_cond1$order <- "cond1"
+
+#contrast 2
+DROI_50thr_supamyg_R_cond2 <- read.csv ("../data/ROI_50thr_supamyg_R_cond2.csv")
+DROI_50thr_supamyg_R_cond2$Subject <- rep(valid_subj$Subject, each=2)
+DROI_50thr_supamyg_R_cond2$Subject <- as.numeric(gsub("sub-","",DROI_50thr_supamyg_R_cond2$Subject))
+DROI_50thr_supamyg_R_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_50thr_supamyg_R_cond2 <- reshape(DROI_50thr_supamyg_R_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_50thr_supamyg_R_cond2$order <- "cond2"
+
+#combine conditions
+DROI_50thr_supamyg_R <- rbind(DROI_50thr_supamyg_R_cond1,DROI_50thr_supamyg_R_cond2)
+
+#merge with parent/alone version
+DROI_50thr_supamyg_R <- merge(DROI_50thr_supamyg_R,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_50thr_supamyg_R <- merge(DROI_50thr_supamyg_R,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#remove subject 066 (invalid because has 117 TRs)
+ DROI_50thr_supamyg_R <- DROI_50thr_supamyg_R[-(which(DROI_50thr_supamyg_R$Subject==66)),]
+
+#turn to numeric and scale
+ DROI_50thr_supamyg_R <- DROI_50thr_supamyg_R %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F))
+```
+
+
+#test 50th contrasts- right superficial amygdala
+```{r}
+#look at the descriptive statistics
+describeBy (data= DROI_50thr_supamyg_R, supamyg_r_activation.noise_baseline~Parent_Alone)
+
+#check there are no order effects
+lmer_supamyg_R_noise_baseline_order <-lmer(data= DROI_50thr_supamyg_R, supamyg_r_activation.noise_baseline~order*Parent_Alone + (1|Subject))
+report(lmer_supamyg_R_noise_baseline_order)
+
+#analysis with sex and age 
+lmer_supamyg_R_noise_baseline <-lmer(data= DROI_50thr_supamyg_R, supamyg_r_activation.noise_baseline~SEX_num_c+MRI_AGE_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_supamyg_R_noise_baseline)
+
+#divide the sample according to children (under 11) and adolescents (age cutoff according to gee 2014)
+DROI_50thr_supamyg_R <- DROI_50thr_supamyg_R %>%
+  mutate(age_group = ifelse(MRI_AGE<11,0,1),
+         age_group_c = scale(age_group,scale=F))
+
+#check separately for children and adolescents
+lmer_supamyg_R_noise_baseline_children <-lmer(data= DROI_50thr_supamyg_R[DROI_50thr_supamyg_R$age_group==0,], supamyg_r_activation.noise_baseline~Parent_Alone_num_c+SEX_num_c + (1|Subject))
+report(lmer_supamyg_R_noise_baseline_children)
+describe(data=DROI_50thr_supamyg_R[DROI_50thr_supamyg_R$age_group==0,], supamyg_r_activation.noise_baseline~Parent_Alone)
+
+lmer_supamyg_R_noise_baseline_adolescents <-lmer(data= DROI_50thr_supamyg_R[DROI_50thr_supamyg_R$age_group==1,], supamyg_r_activation.noise_baseline~Parent_Alone_num_c+SEX_num_c + (1|Subject))
+report(lmer_supamyg_R_noise_baseline_adolescents)
+describe(data=DROI_50thr_supamyg_R[DROI_50thr_supamyg_R$age_group==1,], supamyg_r_activation.noise_baseline~Parent_Alone)
+
+  
+#check plus vs noise contrast
+describeBy (data= DROI_50thr_supamyg_R, supamyg_r_activation.plus_minus~Parent_Alone)
+
+#check there are no order effects
+lmer_supamyg_R_plus_minus_order <-lmer(data= DROI_50thr_supamyg_R, supamyg_r_activation.plus_minus~order*Parent_Alone + (1|Subject))
+report(lmer_supamyg_R_plus_minus_order)
+
+#check with age and sex
+lmer_supamyg_R_plus_minus <-lmer(data= DROI_50thr_supamyg_R, supamyg_r_activation.plus_minus~SEX_num_c+MRI_AGE_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_supamyg_R_plus_minus)
+```
+
+right superficial amygdala visualization
+```{r}
+#spaghetti plots
+
+#children- noise vs baseline
+supamyg_r_noise_baseline_plot_children <- ggplot(data = DROI_50thr_supamyg_R[DROI_50thr_supamyg_R$age_group==0,], 
+                               aes(group=Subject, x = Parent_Alone,y = supamyg_r_activation.noise_baseline, color=Parent_Alone))+
+  geom_jitter(width = 0.05, alpha = 0.3) +
+  geom_line(alpha = 0.2, size = 0.4, color="black")+
+   stat_summary(fun=mean,geom="line",lwd=1,color="black",aes(group=1))+
+  scale_color_brewer(palette="Set2")+
+  theme_classic()
+
+#adolescents- noise vs baseline
+supamyg_r_noise_baseline_plot_adolescents <- ggplot(data = DROI_50thr_supamyg_R[DROI_50thr_supamyg_R$age_group==1,], 
+                               aes(group=Subject, x = Parent_Alone,y = supamyg_r_activation.noise_baseline, color=Parent_Alone))+
+  geom_jitter(width = 0.05, alpha = 0.3) +
+  geom_line(alpha = 0.2, size = 0.4, color="black")+
+   stat_summary(fun=mean,geom="line",lwd=1,color="black",aes(group=1))+
+  scale_color_brewer(palette="Set2")+
+  theme_classic()
+```
+
+
+#organize ROI contrasts file -left superficial amygdala
+```{r}
+#contrast 1
+DROI_50thr_supamyg_L_cond1 <- read.csv ("../data/ROI_50thr_supamyg_L_cond1.csv")
+DROI_50thr_supamyg_L_cond1$Subject <- rep(valid_subj$Subject, each=2)
+DROI_50thr_supamyg_L_cond1$Subject <- as.numeric(gsub("sub-","",DROI_50thr_supamyg_L_cond1$Subject))
+DROI_50thr_supamyg_L_cond1$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_50thr_supamyg_L_cond1 <- reshape(DROI_50thr_supamyg_L_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_50thr_supamyg_L_cond1$order <- "cond1"
+
+#contrast 2
+DROI_50thr_supamyg_L_cond2 <- read.csv ("../data/ROI_50thr_supamyg_L_cond2.csv")
+DROI_50thr_supamyg_L_cond2$Subject <- rep(valid_subj$Subject, each=2)
+DROI_50thr_supamyg_L_cond2$Subject <- as.numeric(gsub("sub-","",DROI_50thr_supamyg_L_cond2$Subject))
+DROI_50thr_supamyg_L_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_50thr_supamyg_L_cond2 <- reshape(DROI_50thr_supamyg_L_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_50thr_supamyg_L_cond2$order <- "cond2"
+
+#combine conditions
+DROI_50thr_supamyg_L <- rbind(DROI_50thr_supamyg_L_cond1,DROI_50thr_supamyg_L_cond2)
+
+#merge with parent/alone version
+DROI_50thr_supamyg_L <- merge(DROI_50thr_supamyg_L,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_50thr_supamyg_L <- merge(DROI_50thr_supamyg_L,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#remove subject 066 (invalid because has 117 TRs)
+ DROI_50thr_supamyg_L <- DROI_50thr_supamyg_L[-(which(DROI_50thr_supamyg_L$Subject==66)),]
+
+#turn to numeric and scale
+ DROI_50thr_supamyg_L <- DROI_50thr_supamyg_L %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F))
+```
+
+#test 50th contrasts- left superficial amygdala
+```{r}
+#look at the descriptive statistics
+describeBy (data= DROI_50thr_supamyg_L, supamyg_l_activation.noise_baseline~Parent_Alone)
+
+#check there are no order effects
+lmer_supamyg_L_noise_baseline_order <-lmer(data= DROI_50thr_supamyg_L, supamyg_l_activation.noise_baseline~order*Parent_Alone + (1|Subject))
+report(lmer_supamyg_L_noise_baseline_order)
+
+#analysis with sex and age 
+lmer_supamyg_L_noise_baseline <-lmer(data= DROI_50thr_supamyg_L, supamyg_l_activation.noise_baseline~SEX_num_c+order*MRI_AGE_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_supamyg_L_noise_baseline)
+
+
+#check separately according to order
+lmer_supamyg_L_noise_baseline_parent1st <-lmer(data= DROI_50thr_supamyg_L[DROI_50thr_supamyg_L$order=="cond1" & DROI_50thr_supamyg_L$Parent_Alone=="Parent"|DROI_50thr_supamyg_L$order=="cond2" & DROI_50thr_supamyg_L$Parent_Alone=="Alone",], supamyg_l_activation.noise_baseline~MRI_AGE_c*Parent_Alone_num_c+SEX_num_c + (1|Subject))
+report(lmer_supamyg_L_noise_baseline_parent1st)
+
+lmer_supamyg_L_noise_baseline_alone1st <-lmer(data= DROI_50thr_supamyg_L[DROI_50thr_supamyg_L$order=="cond1" & DROI_50thr_supamyg_L$Parent_Alone=="Alone"|DROI_50thr_supamyg_L$order=="cond2" & DROI_50thr_supamyg_L$Parent_Alone=="Parent",], supamyg_l_activation.noise_baseline~MRI_AGE_c*Parent_Alone_num_c+SEX_num_c + (1|Subject))
+report(lmer_supamyg_L_noise_baseline_alone1st)
+
+
+  
+#check plus vs noise contrast
+describeBy (data= DROI_50thr_supamyg_L, supamyg_l_activation.plus_minus~Parent_Alone)
+#no difference
+
+```
+
+
+#organize ROI contrasts file -left lateralobasal amygdala
+```{r}
+#contrast 1
+valid_subj_no66 <- as.data.frame(valid_subj[-which(valid_subj$Subject=="sub-066"),])
+colnames(valid_subj_no66)[1] <-"Subject"
+DROI_50thr_lbamyg_L_cond1 <- read.csv ("../data/ROI_50thr_lbamyg_L_cond1.csv")
+DROI_50thr_lbamyg_L_cond1$Subject <- rep(valid_subj_no66$Subject, each=2)
+DROI_50thr_lbamyg_L_cond1$Subject <- as.numeric(gsub("sub-","",DROI_50thr_lbamyg_L_cond1$Subject))
+DROI_50thr_lbamyg_L_cond1$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj_no66))
+DROI_50thr_lbamyg_L_cond1 <- reshape(DROI_50thr_lbamyg_L_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_50thr_lbamyg_L_cond1$order <- "cond1"
+
+#contrast 2
+DROI_50thr_lbamyg_L_cond2 <- read.csv ("../data/ROI_50thr_lbamyg_L_cond2.csv")
+DROI_50thr_lbamyg_L_cond2$Subject <- rep(valid_subj_no66$Subject, each=2)
+DROI_50thr_lbamyg_L_cond2$Subject <- as.numeric(gsub("sub-","",DROI_50thr_lbamyg_L_cond2$Subject))
+DROI_50thr_lbamyg_L_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj_no66))
+DROI_50thr_lbamyg_L_cond2 <- reshape(DROI_50thr_lbamyg_L_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_50thr_lbamyg_L_cond2$order <- "cond2"
+
+#combine conditions
+DROI_50thr_lbamyg_L <- rbind(DROI_50thr_lbamyg_L_cond1,DROI_50thr_lbamyg_L_cond2)
+
+#merge with parent/alone version
+DROI_50thr_lbamyg_L <- merge(DROI_50thr_lbamyg_L,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_50thr_lbamyg_L <- merge(DROI_50thr_lbamyg_L,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#turn to numeric and scale
+ DROI_50thr_lbamyg_L <- DROI_50thr_lbamyg_L %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F))
+```
+
+
+#test 50th contrasts- left lateralobasal amygdala
+```{r}
+#look at the descriptive statistics
+describeBy (data= DROI_50thr_lbamyg_L, lbamyg_l_activation.noise_baseline~Parent_Alone)
+
+#check there are no order effects
+lmer_lbamyg_L_noise_baseline_order <-lmer(data= DROI_50thr_lbamyg_L, lbamyg_l_activation.noise_baseline~order*Parent_Alone + (1|Subject))
+report(lmer_lbamyg_L_noise_baseline_order)
+
+#analysis with sex and age 
+lmer_lbamyg_L_noise_baseline <-lmer(data= DROI_50thr_lbamyg_L, lbamyg_l_activation.noise_baseline~SEX_num_c+MRI_AGE_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_lbamyg_L_noise_baseline)
+
+
+#check plus vs noise contrast
+describeBy (data= DROI_50thr_lbamyg_L, lbamyg_l_activation.plus_minus~Parent_Alone)
+#no difference
+
+```
+
+#organize ROI contrasts file -right lateralobasal amygdala
+```{r}
+#contrast 1
+#SOMETHING IS WRONG ONE SUBJECT IS MISSING (NEED TO FIND OUT WHO)
+DROI_50thr_lbamyg_R_cond1 <- read.csv ("../data/ROI_50thr_lbamyg_R_cond1.csv")
+DROI_50thr_lbamyg_R_cond1$Subject <- rep(valid_subj_no66$Subject, each=2)
+DROI_50thr_lbamyg_R_cond1$Subject <- as.numeric(gsub("sub-","",DROI_50thr_lbamyg_R_cond1$Subject))
+DROI_50thr_lbamyg_R_cond1$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj_no66))
+DROI_50thr_lbamyg_R_cond1 <- reshape(DROI_50thr_lbamyg_R_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_50thr_lbamyg_R_cond1$order <- "cond1"
+
+#contrast 2
+DROI_50thr_lbamyg_R_cond2 <- read.csv ("../data/ROI_50thr_lbamyg_R_cond2.csv")
+DROI_50thr_lbamyg_R_cond2$Subject <- rep(valid_subj_no66$Subject, each=2)
+DROI_50thr_lbamyg_R_cond2$Subject <- as.numeric(gsub("sub-","",DROI_50thr_lbamyg_R_cond2$Subject))
+DROI_50thr_lbamyg_R_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj_no66))
+DROI_50thr_lbamyg_R_cond2 <- reshape(DROI_50thr_lbamyg_R_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_50thr_lbamyg_R_cond2$order <- "cond2"
+
+#combine conditions
+DROI_50thr_lbamyg_R <- rbind(DROI_50thr_lbamyg_R_cond1,DROI_50thr_lbamyg_R_cond2)
+
+#merge with parent/alone version
+DROI_50thr_lbamyg_R <- merge(DROI_50thr_lbamyg_R,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_50thr_lbamyg_R <- merge(DROI_50thr_lbamyg_R,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#turn to numeric and scale
+ DROI_50thr_lbamyg_R <- DROI_50thr_lbamyg_R %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F))
+```
+
+
+#test 50th contrasts- left lateralobasal amygdala
+```{r}
+#look at the descriptive statistics
+describeBy (data= DROI_50thr_lbamyg_R, lbamyg_R_activation.noise_baseline~Parent_Alone)
+
+#check there are no order effects
+lmer_lbamyg_R_noise_baseline_order <-lmer(data= DROI_50thr_lbamyg_R, lbamyg_R_activation.noise_baseline~order*Parent_Alone + (1|Subject))
+report(lmer_lbamyg_R_noise_baseline_order)
+
+#analysis with sex and age 
+lmer_lbamyg_R_noise_baseline <-lmer(data= DROI_50thr_lbamyg_R, lbamyg_R_activation.noise_baseline~SEX_num_c+MRI_AGE_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_lbamyg_R_noise_baseline)
+
+
+#check plus vs noise contrast
+describeBy (data= DROI_50thr_lbamyg_R, lbamyg_R_activation.plus_minus~Parent_Alone)
+#no difference
+
+```
+
+
+#organize new mPFC roi (pgACC) file
+```{r}
+#contrast 1
+DROI_schaefer_pgACC_cond1 <- read.csv ("../data/ROI_schaefer400_pgACC_cond1.csv")
+DROI_schaefer_pgACC_cond1$Subject <- rep(valid_subj$Subject, each=2)
+DROI_schaefer_pgACC_cond1$Subject <- as.numeric(gsub("sub-","",DROI_schaefer_pgACC_cond1$Subject))
+DROI_schaefer_pgACC_cond1$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_schaefer_pgACC_cond1 <- reshape(DROI_schaefer_pgACC_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_schaefer_pgACC_cond1$order <- "cond1"
+
+
+#contrast 2
+DROI_schaefer_pgACC_cond2 <- read.csv ("../data/ROI_schaefer400_pgACC_cond2.csv")
+DROI_schaefer_pgACC_cond2$Subject <- rep(valid_subj$Subject, each=2)
+DROI_schaefer_pgACC_cond2$Subject <- as.numeric(gsub("sub-","",DROI_schaefer_pgACC_cond2$Subject))
+DROI_schaefer_pgACC_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_schaefer_pgACC_cond2 <- reshape(DROI_schaefer_pgACC_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_schaefer_pgACC_cond2$order <- "cond2"
+
+#combine conditions
+DROI_schaefer_pgACC <- rbind(DROI_schaefer_pgACC_cond1,DROI_schaefer_pgACC_cond2)
+
+#merge with parent/alone version
+DROI_schaefer_pgACC <- merge(DROI_schaefer_pgACC,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_schaefer_pgACC <- merge(DROI_schaefer_pgACC,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#remove subject (invalid because has 117 TRs)
+ DROI_schaefer_pgACC <- DROI_schaefer_pgACC[-(which(DROI_schaefer_pgACC$Subject==66)),]
+
+#turn to numeric and scale
+ DROI_schaefer_pgACC <- DROI_schaefer_pgACC %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F))
+ 
+```
+
+#test schaefer mPFC ROI
+```{r}
+#look at the descriptive statistics
+describeBy (data= DROI_schaefer_pgACC, pgACC_activation.plus_minus~Parent_Alone)
+describeBy (data= DROI_schaefer_pgACC, pgACC_activation.noise_baseline~Parent_Alone)
+
+#check there are no order effects
+lmer_pgACC_order <-lmer(data= DROI_schaefer_pgACC, pgACC_activation.plus_minus~order*Parent_Alone + (1|Subject))
+report(lmer_pgACC_order)
+
+#analysis with sex and age
+lmer_pgACC_plus_minus <-lmer(data= DROI_schaefer_pgACC, pgACC_activation.plus_minus~ SEX_num_c+Parent_Alone*MRI_AGE_c + (1|Subject))
+report(lmer_pgACC_plus_minus)
+
+#check noise vs. baseline
+lmer_pgACC_noise_baseline <-lmer(data= DROI_schaefer_pgACC, pgACC_activation.noise_baseline~ SEX_num_c+Parent_Alone*MRI_AGE_c + (1|Subject))
+report(lmer_pgACC_noise_baseline)
+
+```
+#check correlation between noise and plus vs minus contrasts
+```{r}
+cor.test(DROI_50thr_cmamyg_L$cmamyg_L_activation.noise_baseline,DROI_50thr_cmamyg_L$cmamyg_L_activation.plus_minus)
+
+cor.test(DROI_50thr_cmamyg_R$cmamyg_r_activation.noise_baseline,DROI_50thr_cmamyg_R$cmamyg_r_activation.plus_minus)
+
+cor.test(DROI_50thr_supamyg_R$supamyg_r_activation.noise_baseline,DROI_50thr_supamyg_R$supamyg_r_activation.plus_minus)
+
+cor.test(DROI_50thr_lbamyg_L$lbamyg_l_activation.noise_baseline,DROI_50thr_lbamyg_L$lbamyg_l_activation.plus_minus)
+
+cor.test(DROI_schaefer_pgACC$pgACC_activation.noise_baseline,DROI_schaefer_pgACC$pgACC_activation.plus_minus)
+
+
+```
+
+#check if neural results correlate with behavior
+```{r}
+
+#turn ROI datasets to wide format
+DROI_50thr_cmamyg_R_wide <- reshape(DROI_50thr_cmamyg_R, timevar = "Parent_Alone",idvar="Subject",direction="wide")
+
+varnames_cmamyg_r <- c(which(colnames(DROI_50thr_cmamyg_R)=="Subject"),
+                       which(colnames(DROI_50thr_cmamyg_R)=="Parent_Alone"),
+                       which(colnames(DROI_50thr_cmamyg_R)=="cmamyg_r_activation.noise_baseline"),
+                       which(colnames(DROI_50thr_cmamyg_R)=="cmamyg_r_activation.plus_minus"))
+
+                       
+DBehav_Longdif <- merge(DBehav_Longdif,DROI_50thr_cmamyg_R[,varnames_cmamyg_r], by=c("Subject","Parent_Alone"),all.x=T, all.y=F)
+
+
+DBehav_Wide <- merge(DBehav_Wide,
+                     DROI_50thr_cmamyg_R_wide[,c("Subject",
+                                                 "cmamyg_r_activation.noise_baseline.Alone",
+                                                 "cmamyg_r_activation.noise_baseline.Parent",
+                                                 "cmamyg_r_activation.plus_minus.Alone",
+                                                 "cmamyg_r_activation.plus_minus.Parent")], by ="Subject", all.x=T, all.y=F)
+
+cor.test(DBehav_Wide$Alone_Post_PlusMinMinus,DBehav_Wide$cmamyg_r_activation.noise_baseline.Alone)
+cor.test(DBehav_Wide$Alone_Post_PlusMinMinus.ner,DBehav_Wide$cmamyg_r_activation.noise_baseline.Parent)
+cor.test(DBehav_Wide$Parent_Post_PlusMinMinus,DBehav_Wide$cmamyg_r_activation.plus_minus.Alone)
+cor.test(DBehav_Wide$Parent_Post_PlusMinMinus.ner,DBehav_Wide$cmamyg_r_activation.plus_minus.Parent)
+
+summary(lmer(data=DBehav_Longdif, LikeRESP ~ Parent_Alone*time*cmamyg_r_activation.noise_baseline+(1|Subject)))
+```
+
+
+
+#merge ages for subjects according to the order in fsl design template
+```{r}
+subs_fsl_order <- read.csv ("../data/valid_subjects_organized_by_fsl_order.csv")
+subs_fsl_order$Subject <- as.numeric(gsub("sub-","",subs_fsl_order$Subject))
+subs_fsl_order$fsl_order <- 1:78
+subs_fsl_order <- merge(subs_fsl_order,DBehav_Wide[,c("Subject","SEX","MRI_AGE","First_Cond")],
+                              by="Subject", all.x=T, all.y=F)
+
+subs_fsl_order$MRI_AGE_c <- scale(subs_fsl_order$MRI_AGE,scale=F)
+
+#create an age variable in which the second scan (i.e. the alone condition) is multiplied by minus 1
+#create a sex X condition interaction variable
+#create an order X condition interaction variable
+subs_fsl_order <- subs_fsl_order %>%
+  mutate(SEX_num = ifelse(SEX=="m",-1,1),
+         SEX_num_c = scale(SEX_num,scale=F),
+         SEX_int = ifelse(fsl_order>=40, SEX_num*-1, SEX_num),
+         MRI_AGE_c_int = ifelse(fsl_order >=40,MRI_AGE_c*-1,MRI_AGE_c),
+         MRI_AGE_c_int = round(MRI_AGE_c_int,2),
+         MRI_AGE_bin = ifelse(MRI_AGE<11,-1,1),
+         First_Cond_num = ifelse(First_Cond=="Parent",1,-1),
+         order_int = ifelse(fsl_order>=40, First_Cond_num*-1,First_Cond_num))
+
+write.csv(subs_fsl_order,"../data/subs_fsl_order.csv")
+```
+
+
+##################################################################################
+#final contrasts (from smoothed_forROIs folder)
+
+#organize file-left CM amygdala
+```{r}
+#contrast 1
+DROI_60thr_cmamyg_l_cond1 <- read.csv ("../data/ROI_60thr_cmamyg_l_cond1.csv")
+valid_subj <- read.csv ("../data/valid_participant_list.csv")
+DROI_60thr_cmamyg_l_cond1$Subject <- rep(valid_subj$Subject, each=2)
+DROI_60thr_cmamyg_l_cond1$Subject <- as.numeric(gsub("sub-","",DROI_60thr_cmamyg_l_cond1$Subject))
+DROI_60thr_cmamyg_l_cond1$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_60thr_cmamyg_l_cond1 <- reshape(DROI_60thr_cmamyg_l_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_60thr_cmamyg_l_cond1$order <- "cond1"
+
+#contrast 2
+DROI_60thr_cmamyg_l_cond2 <- read.csv ("../data/ROI_60thr_cmamyg_l_cond2.csv")
+DROI_60thr_cmamyg_l_cond2$Subject <- rep(valid_subj$Subject, each=2)
+DROI_60thr_cmamyg_l_cond2$Subject <- as.numeric(gsub("sub-","",DROI_60thr_cmamyg_l_cond2$Subject))
+DROI_60thr_cmamyg_l_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_60thr_cmamyg_l_cond2 <- reshape(DROI_60thr_cmamyg_l_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_60thr_cmamyg_l_cond2$order <- "cond2"
+
+#combine conditions
+DROI_60thr_cmamyg_l <- rbind(DROI_60thr_cmamyg_l_cond1,DROI_60thr_cmamyg_l_cond2)
+
+#merge with parent/alone version
+DROI_60thr_cmamyg_l <- merge(DROI_60thr_cmamyg_l,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_60thr_cmamyg_l <- merge(DROI_60thr_cmamyg_l,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#turn to numeric and scale
+#create age groups- divide the sample according to children (under 11) and adolescents (age cutoff according to gee 2014)
+ DROI_60thr_cmamyg_l <- DROI_60thr_cmamyg_l %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F),
+                  MRI_AGE_group = ifelse(MRI_AGE<11,"child","adolescent"))
+
+```
+
+#test results- left cm amygdala
+```{r, include=F}
+#look at the descriptive statistics
+describeBy (data= DROI_60thr_cmamyg_l, cmamyg_l_activation.noise_baseline~Parent_Alone)
+
+#check there are no order effects
+lmer_cmamyg_l_noise_baseline_order <-lmer(data= DROI_60thr_cmamyg_l, cmamyg_l_activation.noise_baseline~order*Parent_Alone + (1|Subject))
+report(lmer_cmamyg_l_noise_baseline_order)
+
+#analysis with sex and age 
+lmer_cmamyg_l_noise_baseline <-lmer(data= DROI_60thr_cmamyg_l, cmamyg_l_activation.noise_baseline~SEX_num_c+Parent_Alone_num_c*MRI_AGE_c+(1|Subject))
+report(lmer_cmamyg_l_noise_baseline)
+
+#check separately for children and adolescents
+lmer_cmamyg_l_noise_baseline_children <- lmer(data= DROI_60thr_cmamyg_l[DROI_60thr_cmamyg_l$MRI_AGE_group=="child",], cmamyg_l_activation.noise_baseline~Parent_Alone_num_c+SEX_num_c + (1|Subject))
+report(lmer_cmamyg_l_noise_baseline_children)
+describe(data=DROI_60thr_cmamyg_l[DROI_60thr_cmamyg_l$MRI_AGE_group=="child",], cmamyg_l_activation.noise_baseline~Parent_Alone)
+
+lmer_cmamyg_l_noise_baseline_adolescents <-lmer(data= DROI_60thr_cmamyg_l[DROI_60thr_cmamyg_l$MRI_AGE_group=="adolescent",], cmamyg_l_activation.noise_baseline~Parent_Alone_num_c+SEX_num_c + (1|Subject))
+report(lmer_cmamyg_l_noise_baseline_adolescents)
+describe(data=DROI_60thr_cmamyg_l[DROI_60thr_cmamyg_l$MRI_AGE_group=="adolescent",], cmamyg_l_activation.noise_baseline~Parent_Alone)
+  
+#check plus vs noise contrast
+describeBy (data= DROI_60thr_cmamyg_l, cmamyg_l_activation.plus_minus~Parent_Alone)
+
+lmer_cmamyg_l_plus_minus <-lmer(data= DROI_60thr_cmamyg_l, cmamyg_l_activation.plus_minus~SEX_num_c+Parent_Alone_num_c*MRI_AGE_c+(1|Subject))
+report(lmer_cmamyg_l_plus_minus)
+```
+
+#organize file-right CM amygdala
+```{r}
+#contrast 1
+DROI_60thr_cmamyg_r_cond1 <- read.csv ("../data/ROI_60thr_cmamyg_r_cond1.csv")
+valid_subj <- read.csv ("../data/valid_participant_list.csv")
+DROI_60thr_cmamyg_r_cond1$Subject <- rep(valid_subj$Subject, each=2)
+DROI_60thr_cmamyg_r_cond1$Subject <- as.numeric(gsub("sub-","",DROI_60thr_cmamyg_r_cond1$Subject))
+DROI_60thr_cmamyg_r_cond1$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_60thr_cmamyg_r_cond1 <- reshape(DROI_60thr_cmamyg_r_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_60thr_cmamyg_r_cond1$order <- "cond1"
+
+#contrast 2
+DROI_60thr_cmamyg_r_cond2 <- read.csv ("../data/ROI_60thr_cmamyg_r_cond2.csv")
+DROI_60thr_cmamyg_r_cond2$Subject <- rep(valid_subj$Subject, each=2)
+DROI_60thr_cmamyg_r_cond2$Subject <- as.numeric(gsub("sub-","",DROI_60thr_cmamyg_r_cond2$Subject))
+DROI_60thr_cmamyg_r_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_60thr_cmamyg_r_cond2 <- reshape(DROI_60thr_cmamyg_r_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_60thr_cmamyg_r_cond2$order <- "cond2"
+
+#combine conditions
+DROI_60thr_cmamyg_r <- rbind(DROI_60thr_cmamyg_r_cond1,DROI_60thr_cmamyg_r_cond2)
+
+#merge with parent/alone version
+DROI_60thr_cmamyg_r <- merge(DROI_60thr_cmamyg_r,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_60thr_cmamyg_r <- merge(DROI_60thr_cmamyg_r,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#turn to numeric and scale
+#create age groups
+ DROI_60thr_cmamyg_r <- DROI_60thr_cmamyg_r %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F),
+                  MRI_group = ifelse(MRI_AGE<11,"child","adolescent"))
+
+```
+
+#test results- right cm amygdala
+```{r}
+#look at the descriptive statistics
+describeBy (data= DROI_60thr_cmamyg_r, cmamyg_r_activation.noise_baseline~Parent_Alone)
+
+#check there are no order effects
+lmer_cmamyg_r_noise_baseline_order <-lmer(data= DROI_60thr_cmamyg_r, cmamyg_r_activation.noise_baseline~order*Parent_Alone + (1|Subject))
+report(lmer_cmamyg_r_noise_baseline_order)
+
+#analysis with sex and age 
+lmer_cmamyg_r_noise_baseline <-lmer(data= DROI_60thr_cmamyg_r, cmamyg_r_activation.noise_baseline~SEX_num_c+Parent_Alone_num_c*MRI_AGE_c+(1|Subject))
+report(lmer_cmamyg_r_noise_baseline)
+
+#check plus vs noise contrast
+describeBy (data= DROI_60thr_cmamyg_r, cmamyg_r_activation.plus_minus~Parent_Alone)
+
+lmer_cmamyg_r_plus_minus <-lmer(data= DROI_60thr_cmamyg_r, cmamyg_r_activation.plus_minus~SEX_num_c+Parent_Alone_num_c*MRI_AGE_c+(1|Subject))
+report(lmer_cmamyg_r_plus_minus)
+
+```
+
+#organize file-left sf amygdala
+```{r}
+#contrast 1
+DROI_80thr_supamyg_l_cond1 <- read.csv ("../data/ROI_80thr_supamyg_l_cond1.csv")
+valid_subj <- read.csv ("../data/valid_participant_list.csv")
+DROI_80thr_supamyg_l_cond1$Subject <- rep(valid_subj$Subject, each=2)
+DROI_80thr_supamyg_l_cond1$Subject <- as.numeric(gsub("sub-","",DROI_80thr_supamyg_l_cond1$Subject))
+DROI_80thr_supamyg_l_cond1$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_80thr_supamyg_l_cond1 <- reshape(DROI_80thr_supamyg_l_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_80thr_supamyg_l_cond1$order <- "cond1"
+
+#contrast 2
+DROI_80thr_supamyg_l_cond2 <- read.csv ("../data/ROI_80thr_supamyg_l_cond2.csv")
+DROI_80thr_supamyg_l_cond2$Subject <- rep(valid_subj$Subject, each=2)
+DROI_80thr_supamyg_l_cond2$Subject <- as.numeric(gsub("sub-","",DROI_80thr_supamyg_l_cond2$Subject))
+DROI_80thr_supamyg_l_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_80thr_supamyg_l_cond2 <- reshape(DROI_80thr_supamyg_l_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_80thr_supamyg_l_cond2$order <- "cond2"
+
+#combine conditions
+DROI_80thr_supamyg_l <- rbind(DROI_80thr_supamyg_l_cond1,DROI_80thr_supamyg_l_cond2)
+
+#merge with parent/alone version
+DROI_80thr_supamyg_l <- merge(DROI_80thr_supamyg_l,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_80thr_supamyg_l <- merge(DROI_80thr_supamyg_l,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#turn to numeric and scale
+#create age groups- divide the sample according to children (under 11) and adolescents (age cutoff according to gee 2014)
+ DROI_80thr_supamyg_l <- DROI_80thr_supamyg_l %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F),
+                  MRI_AGE_group = ifelse(MRI_AGE<11,"child","adolescent"))
+
+```
+
+#test results- left sf amygdala
+```{r, include=F}
+#look at the descriptive statistics
+describeBy (data= DROI_80thr_supamyg_l, supamyg_l_activation.noise_baseline~Parent_Alone)
+
+#check there are no order effects
+lmer_supamyg_l_noise_baseline_order <-lmer(data= DROI_80thr_supamyg_l, supamyg_l_activation.noise_baseline~order*Parent_Alone + (1|Subject))
+report(lmer_supamyg_l_noise_baseline_order)
+
+#examine separately for each order
+lmer_supamyg_l_noise_baseline_parent1st <-lmer(data= DROI_80thr_supamyg_l[(DROI_80thr_supamyg_l$order=="cond1"&DROI_80thr_supamyg_l$Parent_Alone=="Parent")|(DROI_80thr_supamyg_l$order=="cond2"&DROI_80thr_supamyg_l$Parent_Alone=="Alone"),], supamyg_l_activation.noise_baseline~Parent_Alone + (1|Subject))
+report(lmer_supamyg_l_noise_baseline_parent1st)
+
+lmer_supamyg_l_noise_baseline_alone1st <-lmer(data= DROI_80thr_supamyg_l[(DROI_80thr_supamyg_l$order=="cond1"&DROI_80thr_supamyg_l$Parent_Alone=="Alone")|(DROI_80thr_supamyg_l$order=="cond2"&DROI_80thr_supamyg_l$Parent_Alone=="Parent"),], supamyg_l_activation.noise_baseline~Parent_Alone + (1|Subject))
+report(lmer_supamyg_l_noise_baseline_alone1st)
+
+#analysis with sex and age 
+lmer_supamyg_l_noise_baseline <-lmer(data= DROI_80thr_supamyg_l, supamyg_l_activation.noise_baseline~order+SEX_num_c+Parent_Alone_num_c*MRI_AGE_c+(1|Subject))
+report(lmer_supamyg_l_noise_baseline)
+
+
+#check plus vs noise contrast
+describeBy (data= DROI_80thr_supamyg_l, supamyg_l_activation.plus_minus~Parent_Alone)
+
+lmer_supamyg_l_plus_minus <-lmer(data= DROI_80thr_supamyg_l, supamyg_l_activation.plus_minus~SEX_num_c+Parent_Alone_num_c*MRI_AGE_c+(1|Subject))
+report(lmer_supamyg_l_plus_minus)
+```
+
+#organize file-right sf amygdala
+```{r}
+#contrast 1
+DROI_80thr_supamyg_r_cond1 <- read.csv ("../data/ROI_80thr_supamyg_r_cond1.csv")
+valid_subj <- read.csv ("../data/valid_participant_list.csv")
+DROI_80thr_supamyg_r_cond1$Subject <- rep(valid_subj$Subject, each=2)
+DROI_80thr_supamyg_r_cond1$Subject <- as.numeric(gsub("sub-","",DROI_80thr_supamyg_r_cond1$Subject))
+DROI_80thr_supamyg_r_cond1$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_80thr_supamyg_r_cond1 <- reshape(DROI_80thr_supamyg_r_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_80thr_supamyg_r_cond1$order <- "cond1"
+
+#contrast 2
+DROI_80thr_supamyg_r_cond2 <- read.csv ("../data/ROI_80thr_supamyg_r_cond2.csv")
+DROI_80thr_supamyg_r_cond2$Subject <- rep(valid_subj$Subject, each=2)
+DROI_80thr_supamyg_r_cond2$Subject <- as.numeric(gsub("sub-","",DROI_80thr_supamyg_r_cond2$Subject))
+DROI_80thr_supamyg_r_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_80thr_supamyg_r_cond2 <- reshape(DROI_80thr_supamyg_r_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_80thr_supamyg_r_cond2$order <- "cond2"
+
+#combine conditions
+DROI_80thr_supamyg_r <- rbind(DROI_80thr_supamyg_r_cond1,DROI_80thr_supamyg_r_cond2)
+
+#merge with parent/alone version
+DROI_80thr_supamyg_r <- merge(DROI_80thr_supamyg_r,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_80thr_supamyg_r <- merge(DROI_80thr_supamyg_r,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#turn to numeric and scale
+#create age groups- divide the sample according to children (under 11) and adolescents (age cutoff according to gee 2014)
+ DROI_80thr_supamyg_r <- DROI_80thr_supamyg_r %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F),
+                  MRI_AGE_group = ifelse(MRI_AGE<11,"child","adolescent"))
+
+```
+
+#test results- right sf amygdala
+```{r, include=F}
+#look at the descriptive statistics
+describeBy (data= DROI_80thr_supamyg_r, supamyg_r_activation.noise_baseline~Parent_Alone)
+
+#check there are no order effects
+lmer_supamyg_r_noise_baseline_order <-lmer(data= DROI_80thr_supamyg_r, supamyg_r_activation.noise_baseline~order*Parent_Alone + (1|Subject))
+report(lmer_supamyg_r_noise_baseline_order)
+
+#analysis with sex and age 
+lmer_supamyg_r_noise_baseline <-lmer(data= DROI_80thr_supamyg_r, supamyg_r_activation.noise_baseline~SEX_num_c+Parent_Alone_num_c*MRI_AGE_c+(1|Subject))
+report(lmer_supamyg_r_noise_baseline)
+
+#check separately for children and adolescents
+lmer_supamyg_r_noise_baseline_children <- lmer(data= DROI_80thr_supamyg_r[DROI_80thr_supamyg_r$MRI_AGE_group=="child",], supamyg_r_activation.noise_baseline~Parent_Alone_num_c+SEX_num_c + (1|Subject))
+report(lmer_supamyg_r_noise_baseline_children)
+describe(data=DROI_80thr_supamyg_r[DROI_80thr_supamyg_r$MRI_AGE_group=="child",], supamyg_r_activation.noise_baseline~Parent_Alone)
+
+lmer_supamyg_r_noise_baseline_adolescents <-lmer(data= DROI_80thr_supamyg_r[DROI_80thr_supamyg_r$MRI_AGE_group=="adolescent",], supamyg_r_activation.noise_baseline~Parent_Alone_num_c+SEX_num_c + (1|Subject))
+report(lmer_supamyg_r_noise_baseline_adolescents)
+describe(data=DROI_80thr_supamyg_r[DROI_80thr_supamyg_r$MRI_AGE_group=="adolescent",], supamyg_r_activation.noise_baseline~Parent_Alone)
+  
+#check plus vs noise contrast
+describeBy (data= DROI_80thr_supamyg_r, supamyg_r_activation.plus_minus~Parent_Alone)
+
+lmer_supamyg_r_plus_minus <-lmer(data= DROI_80thr_supamyg_r, supamyg_r_activation.plus_minus~SEX_num_c+Parent_Alone_num_c*MRI_AGE_c+(1|Subject))
+report(lmer_supamyg_r_plus_minus)
+```
+
+#organize file-left lb amygdala
+```{r}
+#contrast 1
+DROI_80thr_lbamyg_l_cond1 <- read.csv ("../data/ROI_80thr_lbamyg_l_cond1.csv")
+valid_subj <- read.csv ("../data/valid_participant_list.csv")
+DROI_80thr_lbamyg_l_cond1$Subject <- rep(valid_subj$Subject, each=2)
+DROI_80thr_lbamyg_l_cond1$Subject <- as.numeric(gsub("sub-","",DROI_80thr_lbamyg_l_cond1$Subject))
+DROI_80thr_lbamyg_l_cond1$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_80thr_lbamyg_l_cond1 <- reshape(DROI_80thr_lbamyg_l_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_80thr_lbamyg_l_cond1$order <- "cond1"
+
+#contrast 2
+DROI_80thr_lbamyg_l_cond2 <- read.csv ("../data/ROI_80thr_lbamyg_l_cond2.csv")
+DROI_80thr_lbamyg_l_cond2$Subject <- rep(valid_subj$Subject, each=2)
+DROI_80thr_lbamyg_l_cond2$Subject <- as.numeric(gsub("sub-","",DROI_80thr_lbamyg_l_cond2$Subject))
+DROI_80thr_lbamyg_l_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_80thr_lbamyg_l_cond2 <- reshape(DROI_80thr_lbamyg_l_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_80thr_lbamyg_l_cond2$order <- "cond2"
+
+#combine conditions
+DROI_80thr_lbamyg_l <- rbind(DROI_80thr_lbamyg_l_cond1,DROI_80thr_lbamyg_l_cond2)
+
+#merge with parent/alone version
+DROI_80thr_lbamyg_l <- merge(DROI_80thr_lbamyg_l,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_80thr_lbamyg_l <- merge(DROI_80thr_lbamyg_l,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#turn to numeric and scale
+#create age groups- divide the sample according to children (under 11) and adolescents (age cutoff according to gee 2014)
+ DROI_80thr_lbamyg_l <- DROI_80thr_lbamyg_l %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F),
+                  MRI_AGE_group = ifelse(MRI_AGE<11,"child","adolescent"))
+
+```
+
+#test results- left lb amygdala
+```{r, include=F}
+#look at the descriptive statistics
+describeBy (data= DROI_80thr_lbamyg_l, lbamyg_l_activation.noise_baseline~Parent_Alone)
+
+#check there are no order effects
+lmer_lbamyg_l_noise_baseline_order <-lmer(data= DROI_80thr_lbamyg_l, lbamyg_l_activation.noise_baseline~order*Parent_Alone + (1|Subject))
+report(lmer_lbamyg_l_noise_baseline_order)
+
+#analysis with sex and age 
+lmer_lbamyg_l_noise_baseline <-lmer(data= DROI_80thr_lbamyg_l, lbamyg_l_activation.noise_baseline~SEX_num_c+Parent_Alone_num_c*MRI_AGE_c+(1|Subject))
+report(lmer_lbamyg_l_noise_baseline)
+
+
+#check plus vs noise contrast
+describeBy (data= DROI_80thr_lbamyg_l, lbamyg_l_activation.plus_minus~Parent_Alone)
+
+lmer_lbamyg_l_plus_minus <-lmer(data= DROI_80thr_lbamyg_l, lbamyg_l_activation.plus_minus~SEX_num_c+Parent_Alone_num_c*MRI_AGE_c+(1|Subject))
+report(lmer_lbamyg_l_plus_minus)
+```
+
+#organize file-right lb amygdala
+```{r}
+#contrast 1
+DROI_80thr_lbamyg_r_cond1 <- read.csv ("../data/ROI_80thr_lbamyg_r_cond1.csv")
+valid_subj <- read.csv ("../data/valid_participant_list.csv")
+DROI_80thr_lbamyg_r_cond1$Subject <- rep(valid_subj$Subject, each=2)
+DROI_80thr_lbamyg_r_cond1$Subject <- as.numeric(gsub("sub-","",DROI_80thr_lbamyg_r_cond1$Subject))
+DROI_80thr_lbamyg_r_cond1$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_80thr_lbamyg_r_cond1 <- reshape(DROI_80thr_lbamyg_r_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_80thr_lbamyg_r_cond1$order <- "cond1"
+
+#contrast 2
+DROI_80thr_lbamyg_r_cond2 <- read.csv ("../data/ROI_80thr_lbamyg_r_cond2.csv")
+DROI_80thr_lbamyg_r_cond2$Subject <- rep(valid_subj$Subject, each=2)
+DROI_80thr_lbamyg_r_cond2$Subject <- as.numeric(gsub("sub-","",DROI_80thr_lbamyg_r_cond2$Subject))
+DROI_80thr_lbamyg_r_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_80thr_lbamyg_r_cond2 <- reshape(DROI_80thr_lbamyg_r_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_80thr_lbamyg_r_cond2$order <- "cond2"
+
+#combine conditions
+DROI_80thr_lbamyg_r <- rbind(DROI_80thr_lbamyg_r_cond1,DROI_80thr_lbamyg_r_cond2)
+
+#merge with parent/alone version
+DROI_80thr_lbamyg_r <- merge(DROI_80thr_lbamyg_r,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_80thr_lbamyg_r <- merge(DROI_80thr_lbamyg_r,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#turn to numeric and scale
+#create age groups- divide the sample according to children (under 11) and adolescents (age cutoff according to gee 2014)
+ DROI_80thr_lbamyg_r <- DROI_80thr_lbamyg_r %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F),
+                  MRI_AGE_group = ifelse(MRI_AGE<11,"child","adolescent"))
+
+```
+
+#test results- right lb amygdala
+```{r, include=F}
+#look at the descriptive statistics
+describeBy (data= DROI_80thr_lbamyg_r, lbamyg_r_activation.noise_baseline~Parent_Alone)
+
+#check there are no order effects
+lmer_lbamyg_r_noise_baseline_order <-lmer(data= DROI_80thr_lbamyg_r, lbamyg_r_activation.noise_baseline~order*Parent_Alone + (1|Subject))
+report(lmer_lbamyg_r_noise_baseline_order)
+
+#examine separately for each order
+lmer_lbamyg_r_noise_baseline_parent1st <-lmer(data= DROI_80thr_lbamyg_r[(DROI_80thr_lbamyg_r$order=="cond1"&DROI_80thr_lbamyg_r$Parent_Alone=="Parent")|(DROI_80thr_lbamyg_r$order=="cond2"&DROI_80thr_lbamyg_r$Parent_Alone=="Alone"),], lbamyg_r_activation.noise_baseline~Parent_Alone + (1|Subject))
+report(lmer_lbamyg_r_noise_baseline_parent1st)
+
+lmer_lbamyg_r_noise_baseline_alone1st <-lmer(data= DROI_80thr_lbamyg_r[(DROI_80thr_lbamyg_r$order=="cond1"&DROI_80thr_lbamyg_r$Parent_Alone=="Alone")|(DROI_80thr_lbamyg_r$order=="cond2"&DROI_80thr_lbamyg_r$Parent_Alone=="Parent"),], lbamyg_r_activation.noise_baseline~Parent_Alone + (1|Subject))
+report(lmer_lbamyg_r_noise_baseline_alone1st)
+
+#analysis with sex and age 
+lmer_lbamyg_r_noise_baseline <-lmer(data= DROI_80thr_lbamyg_r, lbamyg_r_activation.noise_baseline~SEX_num_c+Parent_Alone_num_c*MRI_AGE_c+(1|Subject))
+report(lmer_lbamyg_r_noise_baseline)
+
+
+#check plus vs noise contrast
+describeBy (data= DROI_80thr_lbamyg_r, lbamyg_r_activation.plus_minus~Parent_Alone)
+
+lmer_lbamyg_r_plus_minus <-lmer(data= DROI_80thr_lbamyg_r, lbamyg_r_activation.plus_minus~SEX_num_c+Parent_Alone_num_c*MRI_AGE_c+(1|Subject))
+report(lmer_lbamyg_r_plus_minus)
+```
+
+#organize file-mPFC
+```{r}
+#contrast 1
+DROI_mPFC_cond1 <- read.csv ("../data/ROI_BA102432_-20-10_cond1.csv")
+valid_subj <- read.csv ("../data/valid_participant_list.csv")
+DROI_mPFC_cond1$Subject <- rep(valid_subj$Subject, each=2)
+DROI_mPFC_cond1$Subject <- as.numeric(gsub("sub-","",DROI_mPFC_cond1$Subject))
+DROI_mPFC_cond1$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_mPFC_cond1 <- reshape(DROI_mPFC_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_mPFC_cond1$order <- "cond1"
+
+#contrast 2
+DROI_mPFC_cond2 <- read.csv ("../data/ROI_BA102432_-20-10_cond2.csv")
+DROI_mPFC_cond2$Subject <- rep(valid_subj$Subject, each=2)
+DROI_mPFC_cond2$Subject <- as.numeric(gsub("sub-","",DROI_mPFC_cond2$Subject))
+DROI_mPFC_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_mPFC_cond2 <- reshape(DROI_mPFC_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_mPFC_cond2$order <- "cond2"
+
+#combine conditions
+DROI_mPFC <- rbind(DROI_mPFC_cond1,DROI_mPFC_cond2)
+
+#merge with parent/alone version
+DROI_mPFC <- merge(DROI_mPFC,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_mPFC <- merge(DROI_mPFC,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#turn to numeric and scale
+#create age groups- divide the sample according to children (under 11) and adolescents (age cutoff according to gee 2014)
+ DROI_mPFC <- DROI_mPFC %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F),
+                  MRI_AGE_group = ifelse(MRI_AGE<11,"child","adolescent"),
+                  order_num = ifelse(order=="cond1",0,1),
+                  order_num_c = scale(order_num, scale=F))
+
+```
+
+#test results- mPFC
+```{r, include=F}
+#look at the descriptive statistics
+describeBy (data= DROI_mPFC, mPFC_activation.noise_baseline~Parent_Alone)
+
+#analysis with no confounding variables
+lmer_mPFC_noise_baseline<-lmer(data= DROI_mPFC, mPFC_activation.noise_baseline~Parent_Alone+(1|Subject))
+report(lmer_mPFC_noise_baseline)
+
+#check confounding variables and decide on final model
+lmer_mPFC_noise_baseline_sex <-lmer(data= DROI_mPFC, mPFC_activation.noise_baseline~SEX_num_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_mPFC_noise_baseline_sex)
+
+lmer_mPFC_noise_baseline_age <-lmer(data= DROI_mPFC, mPFC_activation.noise_baseline~MRI_AGE_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_mPFC_noise_baseline_age)
+
+lmer_mPFC_noise_baseline_order <-lmer(data= DROI_mPFC, mPFC_activation.noise_baseline~order_num_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_mPFC_noise_baseline_order)
+
+#examine separately for males and females
+lmer_mPFC_noise_baseline_males <-lmer(data= DROI_mPFC[DROI_mPFC$SEX=="m",], mPFC_activation.noise_baseline~Parent_Alone_num_c + (1|Subject))
+report(lmer_mPFC_noise_baseline_males)
+
+lmer_mPFC_noise_baseline_females <-lmer(data= DROI_mPFC[DROI_mPFC$SEX=="f",], mPFC_activation.noise_baseline~Parent_Alone_num_c + (1|Subject))
+report(lmer_mPFC_noise_baseline_females)
+
+describe(data = DROI_mPFC, mPFC_activation.noise_baseline~SEX*Parent_Alone)
+
+
+#check plus vs noise contrast
+describeBy (data= DROI_mPFC, mPFC_activation.plus_minus~Parent_Alone)
+
+#analysis with no confounding variables
+lmer_mPFC_plus_minus<-lmer(data= DROI_mPFC, mPFC_activation.plus_minus~Parent_Alone+(1|Subject))
+report(lmer_mPFC_plus_minus)
+
+#check confounding variables and decide on final model
+lmer_mPFC_plus_minus_sex <-lmer(data= DROI_mPFC, mPFC_activation.plus_minus~SEX_num_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_mPFC_plus_minus_sex)
+
+lmer_mPFC_plus_minus_age <-lmer(data= DROI_mPFC, mPFC_activation.plus_minus~MRI_AGE_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_mPFC_plus_minus_age)
+
+lmer_mPFC_plus_minus_order <-lmer(data= DROI_mPFC, mPFC_activation.plus_minus~order_num_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_mPFC_plus_minus_order)
+
+```
+
+
+#organize file-right amygdala- all nuclei
+```{r}
+#contrast 1
+DROI_amyg_r_cond1 <- read.csv ("../data/ROI_80thrlbsup_60thrcm_amyg_r_cond1.csv")
+valid_subj <- read.csv ("../data/valid_participant_list.csv")
+DROI_amyg_r_cond1$Subject <- rep(valid_subj$Subject, each=2)
+DROI_amyg_r_cond1$Subject <- as.numeric(gsub("sub-","",DROI_amyg_r_cond1$Subject))
+DROI_amyg_r_cond1$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_amyg_r_cond1 <- reshape(DROI_amyg_r_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_amyg_r_cond1$order <- "cond1"
+
+#contrast 2
+DROI_amyg_r_cond2 <- read.csv ("../data/ROI_80thrlbsup_60thrcm_amyg_r_cond2.csv")
+DROI_amyg_r_cond2$Subject <- rep(valid_subj$Subject, each=2)
+DROI_amyg_r_cond2$Subject <- as.numeric(gsub("sub-","",DROI_amyg_r_cond2$Subject))
+DROI_amyg_r_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_amyg_r_cond2 <- reshape(DROI_amyg_r_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_amyg_r_cond2$order <- "cond2"
+
+#combine conditions
+DROI_amyg_r <- rbind(DROI_amyg_r_cond1,DROI_amyg_r_cond2)
+
+#merge with parent/alone version
+DROI_amyg_r <- merge(DROI_amyg_r,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_amyg_r <- merge(DROI_amyg_r,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#turn to numeric and scale
+#create age groups- divide the sample according to children (under 11) and adolescents (age cutoff according to gee 2014)
+ DROI_amyg_r <- DROI_amyg_r %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F),
+                  MRI_AGE_group = ifelse(MRI_AGE<11,"child","adolescent"),
+                  order_num = ifelse(order=="cond1",0,1),
+                  order_num_c = scale(order_num,scale=F))
+
+```
+
+#test results- right amygdala- all nuclei
+```{r, include=F}
+#look at the descriptive statistics
+describeBy (data= DROI_amyg_r, amyg_r_activation.noise_baseline~Parent_Alone)
+
+#analysis with no confounding variables
+lmer_amyg_r_noise_baseline<-lmer(data= DROI_amyg_r, amyg_r_activation.noise_baseline~Parent_Alone+(1|Subject))
+report(lmer_amyg_r_noise_baseline)
+
+#check confounding variables and decide on final model
+lmer_amyg_r_noise_baseline_sex <-lmer(data= DROI_amyg_r, amyg_r_activation.noise_baseline~SEX_num_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_amyg_r_noise_baseline_sex)
+
+lmer_amyg_r_noise_baseline_age <-lmer(data= DROI_amyg_r, amyg_r_activation.noise_baseline~MRI_AGE_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_amyg_r_noise_baseline_age)
+
+lmer_amyg_r_noise_baseline_order <-lmer(data= DROI_amyg_r, amyg_r_activation.noise_baseline~order_num_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_amyg_r_noise_baseline_order)
+
+lmer_amyg_r_noise_baseline_sex_order <-lmer(data= DROI_amyg_r, amyg_r_activation.noise_baseline~order_num_c*SEX_num_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_amyg_r_noise_baseline_sex_order)
+
+#examine separately for each order
+lmer_amyg_r_noise_baseline_parent1st <-lmer(data= DROI_amyg_r[(DROI_amyg_r$order=="cond1"&DROI_amyg_r$Parent_Alone=="Parent")|(DROI_amyg_r$order=="cond2"&DROI_amyg_r$Parent_Alone=="Alone"),], amyg_r_activation.noise_baseline~Parent_Alone_num_c + (1|Subject))
+report(lmer_amyg_r_noise_baseline_parent1st)
+
+lmer_amyg_r_noise_baseline_alone1st <-lmer(data= DROI_amyg_r[(DROI_amyg_r$order=="cond1"&DROI_amyg_r$Parent_Alone=="Alone")|(DROI_amyg_r$order=="cond2"&DROI_amyg_r$Parent_Alone=="Parent"),], amyg_r_activation.noise_baseline~Parent_Alone + (1|Subject))
+report(lmer_amyg_r_noise_baseline_alone1st)
+
+describe(data = DROI_amyg_r, amyg_r_activation.noise_baseline~order*Parent_Alone)
+
+#examine separately for males and females
+lmer_amyg_r_noise_baseline_males <-lmer(data= DROI_amyg_r[DROI_amyg_r$SEX=="m",], amyg_r_activation.noise_baseline~Parent_Alone_num_c + (1|Subject))
+report(lmer_amyg_r_noise_baseline_males)
+
+lmer_amyg_r_noise_baseline_females <-lmer(data= DROI_amyg_r[DROI_amyg_r$SEX=="f",], amyg_r_activation.noise_baseline~Parent_Alone_num_c + (1|Subject))
+report(lmer_amyg_r_noise_baseline_females)
+
+describe(data = DROI_amyg_r, amyg_r_activation.noise_baseline~SEX*Parent_Alone)
+
+#check plus vs noise contrast
+describeBy (data= DROI_amyg_r, amyg_r_activation.plus_minus~Parent_Alone)
+
+#analysis with no confounding variables
+lmer_amyg_r_plus_minus<-lmer(data= DROI_amyg_r, amyg_r_activation.plus_minus~Parent_Alone+(1|Subject))
+report(lmer_amyg_r_plus_minus)
+
+#check confounding variables
+lmer_amyg_r_plus_minus_sex <-lmer(data= DROI_amyg_r, amyg_r_activation.plus_minus~SEX_num_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_amyg_r_plus_minus_sex)
+
+lmer_amyg_r_plus_minus_age <-lmer(data= DROI_amyg_r, amyg_r_activation.plus_minus~MRI_AGE_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_amyg_r_plus_minus_age)
+
+lmer_amyg_r_plus_minus_order <-lmer(data= DROI_amyg_r, amyg_r_activation.plus_minus~order_num_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_amyg_r_plus_minus_order)
+
+
+#examine separately for males and females
+lmer_amyg_r_plus_minus_males <-lmer(data= DROI_amyg_r[DROI_amyg_r$SEX=="m",], amyg_r_activation.plus_minus~Parent_Alone + (1|Subject))
+report(lmer_amyg_r_plus_minus_males)
+
+lmer_amyg_r_plus_minus_females <-lmer(data= DROI_amyg_r[DROI_amyg_r$SEX=="f",], amyg_r_activation.plus_minus~Parent_Alone + (1|Subject))
+report(lmer_amyg_r_plus_minus_females)
+
+describe(data = DROI_amyg_r, amyg_r_activation.plus_minus~SEX*Parent_Alone)
+
+```
+
+#organize file-left amygdala- all nuclei
+```{r}
+#contrast 1
+DROI_amyg_l_cond1 <- read.csv ("../data/ROI_80thrlbsup_60thrcm_amyg_l_cond1.csv")
+valid_subj <- read.csv ("../data/valid_participant_list.csv")
+DROI_amyg_l_cond1$Subject <- rep(valid_subj$Subject, each=2)
+DROI_amyg_l_cond1$Subject <- as.numeric(gsub("sub-","",DROI_amyg_l_cond1$Subject))
+DROI_amyg_l_cond1$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_amyg_l_cond1 <- reshape(DROI_amyg_l_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_amyg_l_cond1$order <- "cond1"
+
+#contrast 2
+DROI_amyg_l_cond2 <- read.csv ("../data/ROI_80thrlbsup_60thrcm_amyg_l_cond2.csv")
+DROI_amyg_l_cond2$Subject <- rep(valid_subj$Subject, each=2)
+DROI_amyg_l_cond2$Subject <- as.numeric(gsub("sub-","",DROI_amyg_l_cond2$Subject))
+DROI_amyg_l_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
+DROI_amyg_l_cond2 <- reshape(DROI_amyg_l_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_amyg_l_cond2$order <- "cond2"
+
+#combine conditions
+DROI_amyg_l <- rbind(DROI_amyg_l_cond1,DROI_amyg_l_cond2)
+
+#merge with parent/alone version
+DROI_amyg_l <- merge(DROI_amyg_l,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_amyg_l <- merge(DROI_amyg_l,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#turn to numeric and scale
+#create age groups- divide the sample according to children (under 11) and adolescents (age cutoff according to gee 2014)
+ DROI_amyg_l <- DROI_amyg_l %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F),
+                  MRI_AGE_group = ifelse(MRI_AGE<11,"child","adolescent"),
+                  order_num = ifelse(order=="cond1",0,1),
+                  order_num_c = scale(order_num, scale=F))
+```
+
+#test results- left amygdala- all nuclei
+```{r, include=F}
+#look at the descriptive statistics
+describeBy (data= DROI_amyg_l, amyg_l_activation.noise_baseline~Parent_Alone)
+
+#analysis with no confounding variables
+lmer_amyg_l_noise_baseline<-lmer(data= DROI_amyg_l, amyg_l_activation.noise_baseline~Parent_Alone+(1|Subject))
+report(lmer_amyg_l_noise_baseline)
+
+#check confounding variables
+lmer_amyg_l_noise_baseline_sex <-lmer(data= DROI_amyg_l, amyg_l_activation.noise_baseline~SEX_num_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_amyg_l_noise_baseline_sex)
+
+lmer_amyg_l_noise_baseline_age <-lmer(data= DROI_amyg_l, amyg_l_activation.noise_baseline~MRI_AGE_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_amyg_l_noise_baseline_age)
+
+lmer_amyg_l_noise_baseline_order <-lmer(data= DROI_amyg_l, amyg_l_activation.noise_baseline~order_num_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_amyg_l_noise_baseline_order)
+
+lmer_amyg_l_noise_baseline_sex_order <-lmer(data= DROI_amyg_l, amyg_l_activation.noise_baseline~order_num_c*SEX_num_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_amyg_l_noise_baseline_sex_order)
+
+#examine separately for each order
+lmer_amyg_l_noise_baseline_parent1st <-lmer(data= DROI_amyg_l[(DROI_amyg_l$order=="cond1"&DROI_amyg_l$Parent_Alone=="Parent")|(DROI_amyg_l$order=="cond2"&DROI_amyg_l$Parent_Alone=="Alone"),], amyg_l_activation.noise_baseline~Parent_Alone_num_c + (1|Subject))
+report(lmer_amyg_l_noise_baseline_parent1st)
+
+lmer_amyg_l_noise_baseline_alone1st <-lmer(data= DROI_amyg_l[(DROI_amyg_l$order=="cond1"&DROI_amyg_l$Parent_Alone=="Alone")|(DROI_amyg_l$order=="cond2"&DROI_amyg_l$Parent_Alone=="Parent"),], amyg_l_activation.noise_baseline~Parent_Alone + (1|Subject))
+report(lmer_amyg_l_noise_baseline_alone1st)
+
+describe(data = DROI_amyg_l, amyg_l_activation.noise_baseline~order*Parent_Alone)
+
+#examine separately for males and females
+lmer_amyg_l_noise_baseline_males <-lmer(data= DROI_amyg_l[DROI_amyg_l$SEX=="m",], amyg_l_activation.noise_baseline~Parent_Alone_num_c + (1|Subject))
+report(lmer_amyg_l_noise_baseline_males)
+
+lmer_amyg_l_noise_baseline_females <-lmer(data= DROI_amyg_l[DROI_amyg_l$SEX=="f",], amyg_l_activation.noise_baseline~Parent_Alone_num_c + (1|Subject))
+report(lmer_amyg_l_noise_baseline_females)
+
+describe(data = DROI_amyg_l, amyg_l_activation.noise_baseline~SEX*Parent_Alone)
+
+
+#check plus vs noise contrast
+describeBy (data= DROI_amyg_l, amyg_l_activation.plus_minus~Parent_Alone)
+
+#analysis with no confounding variables
+lmer_amyg_l_plus_minus<-lmer(data= DROI_amyg_l, amyg_l_activation.plus_minus~Parent_Alone+(1|Subject))
+report(lmer_amyg_l_plus_minus)
+
+#check confounding variables
+lmer_amyg_l_plus_minus_sex <-lmer(data= DROI_amyg_l, amyg_l_activation.plus_minus~SEX_num_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_amyg_l_plus_minus_sex)
+
+lmer_amyg_l_plus_minus_age <-lmer(data= DROI_amyg_l, amyg_l_activation.plus_minus~MRI_AGE_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_amyg_l_plus_minus_age)
+
+lmer_amyg_l_plus_minus_order <-lmer(data= DROI_amyg_l, amyg_l_activation.plus_minus~order_num_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_amyg_l_plus_minus_order)
+
+lmer_amyg_l_plus_minus_sex_order <-lmer(data= DROI_amyg_l, amyg_l_activation.plus_minus~order_num_c*SEX_num_c*Parent_Alone_num_c+(1|Subject))
+report(lmer_amyg_l_plus_minus_sex_order)
+
+
+#examine separately for each order
+lmer_amyg_l_plus_minus_parent1st <-lmer(data= DROI_amyg_l[(DROI_amyg_l$order=="cond1"&DROI_amyg_l$Parent_Alone=="Parent")|(DROI_amyg_l$order=="cond2"&DROI_amyg_l$Parent_Alone=="Alone"),], amyg_l_activation.plus_minus~Parent_Alone_num_c + (1|Subject))
+report(lmer_amyg_l_plus_minus_parent1st)
+
+lmer_amyg_l_plus_minus_alone1st <-lmer(data= DROI_amyg_l[(DROI_amyg_l$order=="cond1"&DROI_amyg_l$Parent_Alone=="Alone")|(DROI_amyg_l$order=="cond2"&DROI_amyg_l$Parent_Alone=="Parent"),], amyg_l_activation.plus_minus~Parent_Alone + (1|Subject))
+report(lmer_amyg_l_plus_minus_alone1st)
+
+describe(data = DROI_amyg_l, amyg_l_activation.plus_minus~order*Parent_Alone)
+
+#examine separately for males and females
+lmer_amyg_l_plus_minus_males <-lmer(data= DROI_amyg_l[DROI_amyg_l$SEX=="m",], amyg_l_activation.plus_minus~Parent_Alone + (1|Subject))
+report(lmer_amyg_l_plus_minus_males)
+
+lmer_amyg_l_plus_minus_females <-lmer(data= DROI_amyg_l[DROI_amyg_l$SEX=="f",], amyg_l_activation.plus_minus~Parent_Alone + (1|Subject))
+report(lmer_amyg_l_plus_minus_females)
+
+describe(data = DROI_amyg_l, amyg_l_activation.plus_minus~SEX*Parent_Alone)
+
+```
+
+#check correlations between the contrasts
+```{r}
+cor.test(DROI_60thr_cmamyg_l$cmamyg_l_activation.noise_baseline,DROI_60thr_cmamyg_l$cmamyg_l_activation.plus_minus)
+cor.test(DROI_60thr_cmamyg_r$cmamyg_r_activation.noise_baseline,DROI_60thr_cmamyg_r$cmamyg_r_activation.plus_minus)
+cor.test(DROI_80thr_supamyg_l$supamyg_l_activation.noise_baseline,DROI_80thr_lbamyg_l$lbamyg_l_activation.plus_minus)
+cor.test(DROI_80thr_supamyg_r$supamyg_r_activation.noise_baseline,DROI_80thr_lbamyg_r$lbamyg_r_activation.plus_minus)
+cor.test(DROI_80thr_lbamyg_l$lbamyg_l_activation.noise_baseline,DROI_80thr_lbamyg_l$lbamyg_l_activation.plus_minus)
+cor.test(DROI_80thr_lbamyg_r$lbamyg_r_activation.noise_baseline,DROI_80thr_lbamyg_r$lbamyg_r_activation.plus_minus)
+cor.test(DROI_mPFC$mPFC_activation.noise_baseline,DROI_mPFC$mPFC_activation.plus_minus)
+cor.test(DROI_amyg_l$amyg_l_activation.noise_baseline,DROI_amyg_l$amyg_l_activation.plus_minus)
+cor.test(DROI_amyg_r$amyg_r_activation.noise_baseline,DROI_amyg_r$amyg_r_activation.plus_minus)
+```
+
+#organize files - plus and minus vs. baseline contrasts -left amygdala
+```{r}
+#contrast 1
+DROI_amyg_l_plusmin_cond1 <- read.csv ("../data/ROI_80thrlbsup_60thrcm_amyg_l_plusmin_cond1.csv")
+valid_subj <- read.csv ("../data/valid_participant_list.csv")
+DROI_amyg_l_plusmin_cond1$Subject <- rep(valid_subj$Subject, each=2)
+DROI_amyg_l_plusmin_cond1$Subject <- as.numeric(gsub("sub-","",DROI_amyg_l_plusmin_cond1$Subject))
+DROI_amyg_l_plusmin_cond1$contrast <- rep(c("plus_baseline","minus_baseline"),times=nrow(valid_subj))
+DROI_amyg_l_plusmin_cond1 <- reshape(DROI_amyg_l_plusmin_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_amyg_l_plusmin_cond1$order <- "cond1"
+
+#contrast 2
+DROI_amyg_l_plusmin_cond2 <- read.csv ("../data/ROI_80thrlbsup_60thrcm_amyg_l_plusmin_cond2.csv")
+DROI_amyg_l_plusmin_cond2$Subject <- rep(valid_subj$Subject, each=2)
+DROI_amyg_l_plusmin_cond2$Subject <- as.numeric(gsub("sub-","",DROI_amyg_l_plusmin_cond2$Subject))
+DROI_amyg_l_plusmin_cond2$contrast <- rep(c("plus_baseline","minus_baseline"),times=nrow(valid_subj))
+DROI_amyg_l_plusmin_cond2 <- reshape(DROI_amyg_l_plusmin_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_amyg_l_plusmin_cond2$order <- "cond2"
+
+#combine conditions
+DROI_amyg_l_plusmin <- rbind(DROI_amyg_l_plusmin_cond1,DROI_amyg_l_plusmin_cond2)
+
+#merge with parent/alone version
+DROI_amyg_l_plusmin <- merge(DROI_amyg_l_plusmin,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_amyg_l_plusmin <- merge(DROI_amyg_l_plusmin,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#turn to numeric and scale
+#create age groups- divide the sample according to children (under 11) and adolescents (age cutoff according to gee 2014)
+ DROI_amyg_l_plusmin <- DROI_amyg_l_plusmin %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F),
+                  MRI_AGE_group = ifelse(MRI_AGE<11,"child","adolescent"),
+                  order_num = ifelse(order=="cond1",0,1),
+                  order_num_c = scale(order_num, scale=F))
+```
+
+#organize files - plus and minus vs. baseline contrasts -right amygdala
+```{r}
+#contrast 1
+DROI_amyg_r_plusmin_cond1 <- read.csv ("../data/ROI_80thrlbsup_60thrcm_amyg_r_plusmin_cond1.csv")
+valid_subj <- read.csv ("../data/valid_participant_list.csv")
+DROI_amyg_r_plusmin_cond1$Subject <- rep(valid_subj$Subject, each=2)
+DROI_amyg_r_plusmin_cond1$Subject <- as.numeric(gsub("sub-","",DROI_amyg_r_plusmin_cond1$Subject))
+DROI_amyg_r_plusmin_cond1$contrast <- rep(c("plus_baseline","minus_baseline"),times=nrow(valid_subj))
+DROI_amyg_r_plusmin_cond1 <- reshape(DROI_amyg_r_plusmin_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_amyg_r_plusmin_cond1$order <- "cond1"
+
+#contrast 2
+DROI_amyg_r_plusmin_cond2 <- read.csv ("../data/ROI_80thrlbsup_60thrcm_amyg_r_plusmin_cond2.csv")
+DROI_amyg_r_plusmin_cond2$Subject <- rep(valid_subj$Subject, each=2)
+DROI_amyg_r_plusmin_cond2$Subject <- as.numeric(gsub("sub-","",DROI_amyg_r_plusmin_cond2$Subject))
+DROI_amyg_r_plusmin_cond2$contrast <- rep(c("plus_baseline","minus_baseline"),times=nrow(valid_subj))
+DROI_amyg_r_plusmin_cond2 <- reshape(DROI_amyg_r_plusmin_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_amyg_r_plusmin_cond2$order <- "cond2"
+
+#combine conditions
+DROI_amyg_r_plusmin <- rbind(DROI_amyg_r_plusmin_cond1,DROI_amyg_r_plusmin_cond2)
+
+#merge with parent/alone version
+DROI_amyg_r_plusmin <- merge(DROI_amyg_r_plusmin,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_amyg_r_plusmin <- merge(DROI_amyg_r_plusmin,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#turn to numeric and scale
+#create age groups- divide the sample according to children (under 11) and adolescents (age cutoff according to gee 2014)
+ DROI_amyg_r_plusmin <- DROI_amyg_r_plusmin %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F),
+                  MRI_AGE_group = ifelse(MRI_AGE<11,"child","adolescent"),
+                  order_num = ifelse(order=="cond1",0,1),
+                  order_num_c = scale(order_num, scale=F))
+```
+
+
+#organize files - plus and minus vs. baseline contrasts -mPFC
+```{r}
+#contrast 1
+DROI_mPFC_plusmin_cond1 <- read.csv ("../data/ROI_BA102432_-20-10_plusmin_cond1.csv")
+valid_subj <- read.csv ("../data/valid_participant_list.csv")
+DROI_mPFC_plusmin_cond1$Subject <- rep(valid_subj$Subject, each=2)
+DROI_mPFC_plusmin_cond1$Subject <- as.numeric(gsub("sub-","",DROI_mPFC_plusmin_cond1$Subject))
+DROI_mPFC_plusmin_cond1$contrast <- rep(c("plus_baseline","minus_baseline"),times=nrow(valid_subj))
+DROI_mPFC_plusmin_cond1 <- reshape(DROI_mPFC_plusmin_cond1, timevar="contrast",idvar="Subject", direction="wide")
+DROI_mPFC_plusmin_cond1$order <- "cond1"
+
+#contrast 2
+DROI_mPFC_plusmin_cond2 <- read.csv ("../data/ROI_BA102432_-20-10_plusmin_cond2.csv")
+DROI_mPFC_plusmin_cond2$Subject <- rep(valid_subj$Subject, each=2)
+DROI_mPFC_plusmin_cond2$Subject <- as.numeric(gsub("sub-","",DROI_mPFC_plusmin_cond2$Subject))
+DROI_mPFC_plusmin_cond2$contrast <- rep(c("plus_baseline","minus_baseline"),times=nrow(valid_subj))
+DROI_mPFC_plusmin_cond2 <- reshape(DROI_mPFC_plusmin_cond2, timevar="contrast",idvar="Subject", direction="wide")
+DROI_mPFC_plusmin_cond2$order <- "cond2"
+
+#combine conditions
+DROI_mPFC_plusmin <- rbind(DROI_mPFC_plusmin_cond1,DROI_mPFC_plusmin_cond2)
+
+#merge with parent/alone version
+DROI_mPFC_plusmin <- merge(DROI_mPFC_plusmin,DParentOrderLong, by=c("Subject","order"), all.x=T, all.y=F)
+
+#merge with sex and age
+ DROI_mPFC_plusmin <- merge(DROI_mPFC_plusmin,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
+                              by="Subject", all.x=T, all.y=F)
+ 
+#turn to numeric and scale
+#create age groups- divide the sample according to children (under 11) and adolescents (age cutoff according to gee 2014)
+ DROI_mPFC_plusmin <- DROI_mPFC_plusmin %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F),
+                  MRI_AGE_group = ifelse(MRI_AGE<11,"child","adolescent"),
+                  order_num = ifelse(order=="cond1",0,1),
+                  order_num_c = scale(order_num, scale=F))
+```
+
+#check correlations between the contrasts
+```{r}
+cor.test(DROI_amyg_l$amyg_l_activation.plus_minus,DROI_amyg_l_plusmin$amyg_l_activation.plus_baseline)
+cor.test(DROI_amyg_r$amyg_r_activation.plus_minus,DROI_amyg_r_plusmin$amyg_r_activation.plus_baseline)
+cor.test(DROI_mPFC$mPFC_activation.plus_minus,DROI_mPFC_plusmin$mPFC_activation.plus_baseline)
+#sanity check- positive correlation between plus-minus and plus-baseline
+
+cor.test(DROI_amyg_l$amyg_l_activation.plus_minus,DROI_amyg_l_plusmin$amyg_l_activation.minus_baseline)
+cor.test(DROI_amyg_r$amyg_r_activation.plus_minus,DROI_amyg_r_plusmin$amyg_r_activation.minus_baseline)
+cor.test(DROI_mPFC$mPFC_activation.plus_minus,DROI_mPFC_plusmin$mPFC_activation.minus_baseline)
+#sanity check- negative correlation between plus-minus and minus-baseline
+
+cor.test(DROI_amyg_l$amyg_l_activation.noise_baseline,DROI_amyg_l_plusmin$amyg_l_activation.plus_baseline)
+cor.test(DROI_amyg_r$amyg_r_activation.noise_baseline,DROI_amyg_r_plusmin$amyg_r_activation.plus_baseline)
+cor.test(DROI_mPFC$mPFC_activation.noise_baseline,DROI_mPFC_plusmin$mPFC_activation.plus_baseline)
+#more activation to noise- less activation to the CS+ (significant only in right amygdala)
+
+cor.test(DROI_amyg_l$amyg_l_activation.noise_baseline,DROI_amyg_l_plusmin$amyg_l_activation.minus_baseline)
+cor.test(DROI_amyg_r$amyg_r_activation.noise_baseline,DROI_amyg_r_plusmin$amyg_r_activation.minus_baseline)
+cor.test(DROI_mPFC$mPFC_activation.noise_baseline,DROI_mPFC_plusmin$mPFC_activation.minus_baseline)
+#more activation to noise- more activation to the CS- (significant in left amygdala and mPFC)
+
+cor.test(DROI_amyg_l$amyg_l_activation.plus_minus,DROI_amyg_l_plusmin$amyg_l_activation.minus_baseline)
+cor.test(DROI_amyg_r$amyg_r_activation.plus_minus,DROI_amyg_r_plusmin$amyg_r_activation.minus_baseline)
+cor.test(DROI_mPFC$mPFC_activation.plus_minus,DROI_mPFC_plusmin$mPFC_activation.minus_baseline)
+#much more robust: more activation to noise- less differentiation between CS+ and CS-. Seems like it stems from both directions (i.e., both lower response to CS+ and higher response to CS-). Maybe indicates less learning in total?
+#same pattern both when alone and when with parent
+
+```
+
