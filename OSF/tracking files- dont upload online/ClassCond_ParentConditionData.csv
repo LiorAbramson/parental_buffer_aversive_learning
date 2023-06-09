@@ -1,0 +1,60 @@
+﻿SUBID,Subject,First_Cond,Exp_Parent,Exp_Alone,Version_Parent,Version_Alone,Scan1,Scan2,Scan_Parent,Scan_Alone,Possible_scanorder_confusion,important notes from hard copies,check order_alone,check order_parent,check order_both
+EL002,2,Alone,V2_CB,V1_CB,V2,V1,v1CB,v2CB. Acqknowledge crashed,cond2,cond1,,alone cond-acknowledge crashed,1,FALSE,1
+EL003,3,Alone,V2_REG,V1_REG,V2,V1,V1_reg (w/o parent),V2-reg (w/ parent),cond2,cond1,,,1,FALSE,1
+EL004,4,Alone,V1_CB,V2_CB,V1,V2,"v2CB_alone.  Awake, alert (no like rating for first photo)","v1CB_mom. Awake, alert",cond2,cond1,,"in original compiled file it says the parent condition was first. Alone cond-""no like rarting for first photo""",1,FALSE,1
+EL005,5,Parent,V1_REG,V2_REG,V1,V2,"v1 reg_with. Awake, responding","v2_reg w/o. Awake, responding",cond1,cond2,,,FALSE,1,1
+EL006,6,Parent,V1_REG,V1_REG,V1,V1,"v1_reg. Mom: 1) p1=1, p2=2  > Like rating.   2) p1:5, p2:1","v1_reg. Run time error on e-prime. V2-reg. V1REG. 1) p1=5, p2=1.  2) p1=1, p2=5",cond1,cond2,,,FALSE,1,1
+EL007,7,Parent,V1_REG,V2_REG,V1,V2,!! CORT TAKEN @ 5:45!!. v1 reg_with,v2 reg_without,cond1,cond2,,,FALSE,1,1
+EL010,10,Alone,V1_REG,V2_REG,V1,V2,v2 reg alone,"v1 reg w/ mom. Responsive, doing great",cond2,cond1,,in original compiled file it says the parent condition was first,1,FALSE,1
+EL011,11,Parent,V2_CB,V1_CB,V2,V1,v2CB mom,"v1CB alone. GSR, yes, only this run.",cond1,cond2,,in original compiled file it says the alone condition was first,FALSE,1,1
+EL013,13,Parent,V2_REG,V1_REG,V2,V1,Dad v2 reg,V1 reg alone,cond1,cond2,,in original compiled file it says the alone condition was first,FALSE,1,1
+EL016,16,Alone,V1_CB,V2_CB,V1,V2,alone v2 CB,mom v1 CB,cond2,cond1,,in original compiled file it says the parent condition was first,1,FALSE,1
+EL022,22,Alone,V2_CB,V1_CB,V2,V1,"V1 CB. Alone. Eyes open, alert",V2 CB With mom. Eyes open,cond2,cond1,,,1,FALSE,1
+EL024,24,Alone,,V2_CB,,V2,"Alone V2 CB. Good, laying still. Came out head padded in a way that was tight on ears.",,,cond1,,,,,
+EL025,25,Parent,V1_REG,V2_REG,V1,V2,Mom v1 reg. Dad is going in scanner,Alone v2 reg. EXTRA STRUCTURAL. End @ 2:48,cond1,cond2,,"parent cond-""dad is going in scanner"". Alone cond-""extra structural, bad quality""",FALSE,1,1
+EL032,32,Alone,V2_REG,V1_REG,V2,V1,v1 reg w/o mom. Good,v2 reg w/ mom. Good.,cond2,cond1,,,1,FALSE,1
+EL033,33,Parent,V1_CB,V2_CB,V1,V2,v1 CB w/ mom. 3--> Like. 4--> Like. Not nervous at all.,v2 cb w/o mom.,cond1,cond2,1,in original compiled file it says the alone condition was first,FALSE,1,1
+EL034,34,Alone,V2_CB,V1_CB,V2,V1,Alone V1 cb. Pressed ratings for her on keyboard. Moving feet a lot.,mom v2 CB,cond2,cond1,,"alone cond-""pressed ratings for her on keyboard""",1,FALSE,1
+EL035,35,Parent,V2_REG,V1_REG,V2,V1,v2 reg mom,v1 reg alone,cond1,cond2,,in original compiled file it says the alone condition was first,FALSE,1,1
+EL036,36,Alone,V1_CB,V2_CB,V1,V2,alone v2 CB,mom v1 CB,cond2,cond1,,in original compiled file it says the parent condition was first,1,FALSE,1
+EL037,37,Parent,V1_REG*,V2_REG*,V1,V2,0,0,cond1,cond2,1,no documentation for condition order in the hard copies. I count on the compiled file,FALSE,1,1
+EL041,41,Parent,V1_REG,V2_REG,V1,V2,V1 reg Mom. Good.,V2 reg no mom. Good.,cond1,cond2,,,FALSE,1,1
+EL042,42,Alone,V2_CB,V1_CB,V2,V1,"No mom. V1 CB. Good, responding",Mom V2 CB.,cond2,cond1,,,1,FALSE,1
+EL043,43,Parent,V2_REG,V1_REG,V2,V1,Mom v2 reg., Alone v1 reg. Moving a ton,cond1,cond2,,in original compiled file it says the alone condition was first,FALSE,1,1
+EL044,44,Parent,V1_REG_nervous,V2_REG_nervous,V1,V2,V1 reg with Mom. Nervous,V2 reg no mom,cond1,cond2,,,FALSE,1,1
+EL045,45,Parent,V1_REG,V2_REG,V1,V2,"Mom v1 reg. Good, awake, alert","Alone v2 reg. Awake, good",cond1,cond2,,,FALSE,1,1
+EL049,49,Parent,V1_REG,V2_REG,V1,V2,v1 reg w/ parent,v2 reg alone. Got sleepy in last 30 sec,cond1,cond2,,,FALSE,1,1
+EL050,50,Alone,V2_CB,V1_CB,V2,V1,Alone V1 CB. Bad GSR.,Mom V2 CB.,cond2,cond1,,no documentation for condition order in timeline sheet,1,FALSE,1
+EL051,51,Parent,V2_REG,V1_REG,V2,V1,Mom V2_Reg. at 50% noise. Mom in there. Great.,Alone V1_Reg. Great.,cond1,cond2,,"parent cond-""50% noise""",FALSE,1,1
+EL052,52,Alone,V1_CB,V2_CB,V1,V2,Alone V2_CB. Great. Awake and on task.,Mom V1_CB. Great. Awake and on task.,cond2,cond1,,,1,FALSE,1
+EL056,56,Alone,V1_OG,V2_CB,V1,V2,Alone. No Physio. Don't know what version came first. BIC getting edat 1/27/17.,w mom.,cond2,cond1,,"I think V2 is alone condition because of the hour (v2_CB came before v1_OG, and alone cond was first) ",1,FALSE,1
+EL057,57,Parent,V1_REG,V2_REG,V1,V2,V1 reg Dad in there. Great GSR.,V2 Reg no parent. Great GSR.,cond1,cond2,,,FALSE,1,1
+EL058,58,Alone,V2_CB,V1_CB,V2,V1,"V1 CB No Parent. Moving hands, wiggly.",V2 CB Parent.,cond2,cond1,,"alone cond-""moving hands, wiggly""",1,FALSE,1
+EL060,60,Alone,V1_CB,V2_CB,V1,V2,"Alone V2 CB. Great-awake, but seems a bit sleepy.","Parent V1 CB. Dad holding hand. Getting sleepy. Nim saying ""stay awake.""",cond2,cond1,,"alone cond-""great-awake but seems sleepy"". Parent cond-""dad holding hands but seems sleepy""",1,FALSE,1
+EL062,62,Alone,V1_CB,V2_CB,V1,V2,"Alone V2_CB. Stay awake! Really sleepy, telling her stay awake.","Mom V1_CB. Awake, good. Physio ran over to mom when set up.",cond2,cond1,,"alone cond-""stay awake! Really sleepy. Teling her stay awake""",1,FALSE,1
+EL065,65,Parent,V2_REG,V1_REG,V2,V1,"Mom: v2_reg. Mom-alone. Fixed head before started b/c sore so did loc aagain. Parent: v2_reg, Alone: v1_reg",Alone v1_reg. Didn't get physio signal.,cond1,cond2,,in original compiled file it says the alone condition was first,FALSE,1,1
+EL066,66,Alone,V1_CB,V2_CB,V1,V2,"Alone V2_CB. Good, collected. Mom walked in toward end of scan, didn't know not to go in yet.","Mom V1_cb. Good, collected (falling asleep eyes) closed for end of game) Mom present.",cond2,cond1,,"alone cond-""mom walked in toward the end of scan. Didn't know not to get in""",1,FALSE,1
+EL071,71,Parent,V1_REG,V2_REG,V1,V2,Mom-V1 Reg. Eyes closed for part of game. Done. Good.,Alone-V2 Reg. Done. Good. Eyes closed part of game.,cond1,cond2,,"both conds- ""eyes closed for part of the game""",FALSE,1,1
+EL072,72,Alone,V1_CB,V2_CB,V1,V2,Alone V2_CB. Told her to STAY AWAKE. Eyes closed for most of task. *SUPER TIRED* wouldn't open eyes to rate.,"Mom V1_CB. Awake, mom telling her to wake up. Moving a lot @ 2:45 and throughout.",cond2,cond1,,,1,FALSE,1
+EL074,74,Parent,V2_REG,V1_REG,V2,V1,Mom V2 Reg. Good. Collected,Alone V1 Reg. Good. Collected. 11:57 end,cond1,cond2,,,FALSE,1,1
+EL075,75,Parent,V2_CB,V1_CB,V2,V1,Mom V2 cb. Good. Collected,Alone V1_CB. Good. Collected. *1:13 start mom,cond1,cond2,,,FALSE,1,1
+EL076,76,Alone,V1_OG,V1_REG,V1,V1,"V1 Reg Alone. Sleepy, GSR good. Movement, nodding off. Collected.","V1 _og Mom. Awake, good, collected. *Can't use cond2 wrong version*",cond2,cond1,,SAME STIMULI IN BOTH VERSIONS-DON'T USE!,1,FALSE,1
+EL077,77,Parent,V2_CB,V1_CB,V2,V1,"Mom V2_CB. Good, collected. Sleepy","Alone V1_CB. Said didn't like this game, sound lowered to 93 instead of 100. Good, collected (moving hands). L.",cond1,cond2,,,FALSE,1,1
+EL080,80,Alone,V2_REG,V2_CB,V2,V2,"Biopac crashed, had to reset (should be ok). *asleep* V2_og CB",Reminded to stay awake. V2_og_reg,,,,SAME STIMULI IN BOTH VERSIONS-DON'T USE!,0,FALSE,0
+EL081,81,Alone,V1_REG,V2_REG,V1,V2,"V1_Reg Alone. Came out, had to go bathroom. *Loccalizer--> Cond 2 --> Structural","V2 Reg Mom. Good, on task. No button box. Experimenter pressed rating for her",cond2,cond1,,discreency between the timleine and the checkbox sheets. Seems like the timline is correct (aligns with eprime file),1,FALSE,1
+EL082,82,Parent,V1_CB,V2_CB,V1,V2,Mom v1 CB.Good. Collected.,W/o Mom V2 CB. Good. Collected.,cond1,cond2,,,FALSE,1,1
+EL083,83,Parent,V2_REG,V1_REG,V2,V1,"W/ mom V2 Reg. Good, on task","W/o Mom v1 Reg. Good, on task",cond1,cond2,,,FALSE,1,1
+EL084,84,Parent,V2_CB,V1_CB,V2,V1,"W/ mom V2 CB. Good, on task","W/o Mom V1 CB. Good, on task",cond1,cond2,,,FALSE,1,1
+EL085,85,Alone,V2_REG,V1_REG,V2,V1,"W/o mom. V1 Reg. Good, awake. Motion good","W/ mom. V2 Reg. Good, awake. Motion good",cond2,cond1,,,1,FALSE,1
+EL086,86,Alone,V1_REG,V2_CB,V1,V2,V2_CB alone. Eyes closed in beginning. Couldn't hear CS + go on (moving hand). Collected.,V1_og Mom.Good. Collected,cond2,cond1,,"In hard copies it says that parent cond was V1_OG, but there is no such eprime file (only V1_REG)",1,FALSE,1
+EL087,87,Parent,V1_REG,V2_REG,V1,V2,"With mom V1 Reg. Good, collected",W/o mom V2 Reg. Falling asleep in middle,cond1,cond2,,,FALSE,1,1
+EL088,88,Alone,V1_CB,V2_CB,V1,V2,"Alone V2_CB. Good, collected.","Dad V1_CB. Low on time, cut",cond2,cond1,,,1,FALSE,1
+EL089,89,Parent,V1_REG,V2_REG,V1,V2,"Dad V1_Reg. Good, collected. Moving, yawned","Alone V2_REG. Said eyes watery--told close eyes for little. Good, collected.",cond1,cond2,,"alone cond- ""said eyes watery? Fold close eyes for little",FALSE,1,1
+EL090,90,Parent,V1_CB,V2_CB,V1,V2,Mom V1_CB. Collected. Good motion,"Alone V2_CB. Collected, good motion. Child done: 12:10. Mom start: 12:16",cond1,cond2,,,FALSE,1,1
+EL092,92,Parent,V2_CB,V1_CB,V2,V1,"5 3 = set1, Good motion, on task. 5 1 = set 2. Post rating: 3  5 = set 1, 5    1 = set 2; Mom v2 CB","Pre rate: 5  1 = set 1, 3   1 = set 2; on task, good/moving a lot toward end. Post: 3     1, 4      5. Alone v1 cb",cond1,cond2,,,FALSE,1,1
+EL095,95,Alone,V1_REG,V2_REG,V1,V2,"Alone v2 reg. Staying awake, good, on task","Mom v1 reg. Awake, on task. Some movement",cond2,cond1,,,1,FALSE,1
+EL097,97,Parent,V1_REG,V2_REG,V1,V2,W/ Mom. V1_reg. Getting mom in and out,Alone V2_reg.,cond1,cond2,,"parent cond- ""getting mom in and out""",FALSE,1,1
+EL098,98,Parent,V1_CB,V2_CB,V1,V2,0,0,,,,,FALSE,0,0
+EL099,99,Parent,V2_REG,V1_REG,V2,V1,W/ mom V2_reg,Alone v1_reg,cond1,cond2,,,FALSE,1,1
+EL101,101,Alone,V2_REG,V1_REG,V2,V1,"alone v1 reg. Awake, on task. Getting sleepy. No good GSR.","mom v2 reg.Good, on task. Said ""stay awake!""",cond2,cond1,,"alone cond- ""on task getting sleepy""",1,FALSE,1
+EL102,102,Alone,V2_CB,V1_CB,V2,V1,0,0,,,,,0,FALSE,0

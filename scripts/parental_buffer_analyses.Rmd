@@ -321,7 +321,18 @@ colnames(DParentOrderLong)[colnames(DParentOrderLong)=="Scan"] <- "order"
 
 statistical test- like question
 ```{r}
+#create a semi long format for controling baseline analysis
+DBehav_Longdif_pre <- DBehav_Longdif[DBehav_Longdif$time=="1Pre",]
+colnames(DBehav_Longdif_pre)[c(which(colnames(DBehav_Longdif_pre)=="LikeRESP"), which(colnames(DBehav_Longdif_pre)=="NervousRESP"))] <- c("LikeRESP_pre","NervousRESP_pre")
+DBehav_Longdif_post <- DBehav_Longdif[DBehav_Longdif$time=="2Post",]
+colnames(DBehav_Longdif_post)[c(which(colnames(DBehav_Longdif_post)=="LikeRESP"), which(colnames(DBehav_Longdif_post)=="NervousRESP"))] <- c("LikeRESP_post","NervousRESP_post")
+DBehav_semiLongdif <- merge(DBehav_Longdif_pre,DBehav_Longdif_post, by=c("Subject","version"))
 
+#like question analysis controlling for baseline measures (i.e., examining post treatment controlling for pre-treatment)
+#https://www.middleprofessor.com/files/applied-biostatistics_bookdown/_book/models-for-longitudinal-experiments-pre-post-designs.html
+  model_like_baseline <-lmer(data= DBehav_semiLongdif, LikeRESP_post~version+LikeRESP_pre+(1|Subject))
+  report(model_like_baseline)
+  
 #add sex, age and order information
 
 colnames(DBehav_Longdif)[which(colnames(DBehav_Longdif)=="version")] <- "Parent_Alone"

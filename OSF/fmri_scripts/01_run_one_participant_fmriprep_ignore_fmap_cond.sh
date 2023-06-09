@@ -7,7 +7,6 @@
 #SBATCH --mem-per-cpu=30gb
 
 # This script runs one participant through fMRIPrep
-# difference from main script is skipping field maps.
 
 # 1) define the participant object name to be input into the fMRIPrep function
 # ID number of subject you want to run; $1 is used when running a batch of participants
@@ -29,7 +28,7 @@ singularity exec -e \
 participant \
 --participant_label $subj \
 --skip-bids-validation \
---fd-spike-threshold 0.2 \
+--fd-spike-threshold 0.9 \
 --bids-filter-file fmriprep_preproc_cond.json \
 --ignore fieldmaps \
 --nthreads 8 \
@@ -42,4 +41,3 @@ participant \
 --stop-on-first-crash \
 --notrack \
 --work-dir work \
-

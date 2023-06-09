@@ -320,8 +320,7 @@ colnames(DBehav_Longdif)[which(colnames(DBehav_Longdif)=="Parent_Alone")] <- "ve
                                 version_num_c*time_num_c +
                                 SEX_num_c+MRI_AGE_c + (1|Subject))
   report(model_like_confounds)
-  
-  
+
 #visualization
 #a) summarize overall group effects by condition
   sum_like_dif_se <- summarySE(data = DBehav_Longdif, measurevar="LikeRESP", groupvars =c("version","time"),
@@ -390,7 +389,7 @@ report(model_nervous_confounds)
 #organize file-mPFC
 ```{r}
 #condition 1
-DROI_mPFC_cond1 <- read.csv ("../data/ROI_BA102432_-20-10_cond1.csv")
+DROI_mPFC_cond1 <- read.csv ("../data/ROI_talairach_BA102432_-10-20_resampled_NL6Asym_cond1.csv")
 valid_subj <- read.csv ("../data/valid_participant_list.csv")
 DROI_mPFC_cond1$Subject <- rep(valid_subj$Subject, each=2)
 DROI_mPFC_cond1$Subject <- as.numeric(gsub("sub-","",DROI_mPFC_cond1$Subject))
@@ -399,7 +398,7 @@ DROI_mPFC_cond1 <- reshape(DROI_mPFC_cond1, timevar="contrast",idvar="Subject", 
 DROI_mPFC_cond1$order <- "cond1"
 
 #condition 2
-DROI_mPFC_cond2 <- read.csv ("../data/ROI_BA102432_-20-10_cond2.csv")
+DROI_mPFC_cond2 <- read.csv ("../data/ROI_talairach_BA102432_-10-20_resampled_NL6Asym_cond2.csv")
 DROI_mPFC_cond2$Subject <- rep(valid_subj$Subject, each=2)
 DROI_mPFC_cond2$Subject <- as.numeric(gsub("sub-","",DROI_mPFC_cond2$Subject))
 DROI_mPFC_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
@@ -617,7 +616,7 @@ plot_mPFC_plusmin <- ggplot(data = DROI_mPFC,
 #(change the data file each time to the nucleus mask you want to check)
 ```{r}
 #contrast 1
-  DROI_amyg_cond1 <- read.csv ("../data/ROI_60thr_supamyg_bilateral_cond1.csv")
+  DROI_amyg_cond1 <- read.csv ("../data/ROI_juelich_thr60_lbamyg_bilateral_resample_NL6Asym_cond1.csv")
   valid_subj <- read.csv ("../data/valid_participant_list.csv")
   DROI_amyg_cond1$Subject <- rep(valid_subj$Subject, each=2)
   DROI_amyg_cond1$Subject <- as.numeric(gsub("sub-","",DROI_amyg_cond1$Subject))
@@ -626,7 +625,7 @@ plot_mPFC_plusmin <- ggplot(data = DROI_mPFC,
   DROI_amyg_cond1$order <- "cond1"
 
 #contrast 2
-  DROI_amyg_cond2 <- read.csv ("../data/ROI_60thr_supamyg_bilateral_cond2.csv")
+  DROI_amyg_cond2 <- read.csv ("../data/ROI_juelich_thr60_lbamyg_bilateral_resample_NL6Asym_cond2.csv")
   DROI_amyg_cond2$Subject <- rep(valid_subj$Subject, each=2)
   DROI_amyg_cond2$Subject <- as.numeric(gsub("sub-","",DROI_amyg_cond2$Subject))
   DROI_amyg_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
