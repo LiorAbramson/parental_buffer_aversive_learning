@@ -256,13 +256,20 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
                   time_num_c = scale(time_num,scale=F),
                   MRI_AGE_c = scale(MRI_AGE, scale=F))
    
-#multilevel linear regression
+#multilevel linear regression - DECIDE IF REMOVE FROM FINAL OSF!!
   model_like <-lmer(data= DBehav_Longdif, LikeRESP~version_num_c*time_num_c+(1|Subject))
   report(model_like)
   
 #multilevel linear regression controlling for age and sex 
   model_like_control_age_sex <-lmer(data= DBehav_Longdif, LikeRESP~ version_num_c*time_num_c + SEX_num_c+MRI_AGE_c + (1|Subject))
   report(model_like_control_age_sex)
+
+#although the interaction is not significant, explore the pattern separately for each parental context version
+   model_like_control_age_sex_parent <-lmer(data= DBehav_Longdif[DBehav_Longdif$version=="Parent",], LikeRESP~ time_num_c + SEX_num_c+MRI_AGE_c + (1|Subject))
+   report(model_like_control_age_sex_parent)
+   
+    model_like_control_age_sex_alone <-lmer(data= DBehav_Longdif[DBehav_Longdif$version=="Alone",], LikeRESP~ time_num_c + SEX_num_c+MRI_AGE_c + (1|Subject))
+   report(model_like_control_age_sex_alone)
 
 #visualization
   #a) summarize overall group effects by condition

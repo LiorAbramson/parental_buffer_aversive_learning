@@ -3254,14 +3254,16 @@ report(lmer_amyg_r_plus_baseline)
 lmer_amyg_r_minus_baseline<-lmer(data= DROI_amyg_r_plusmin, amyg_r_activation.minus_baseline~Parent_Alone+(1|Subject))
 report(lmer_amyg_r_minus_baseline)
 
-lmer_mPFC_plus_baseline<-lmer(data= DROI_mPFC_plusmin, mPFC_activation.plus_baseline~Parent_Alone+(1|Subject))
+lmer_mPFC_plus_baseline<-lmer(data= DROI_mPFC_plusmin, mPFC_activation.plus_baseline~Parent_Alone_num_c+(1|Subject))
 report(lmer_mPFC_plus_baseline)
-lmer_mPFC_minus_baseline<-lmer(data= DROI_mPFC_plusmin, mPFC_activation.minus_baseline~Parent_Alone+(1|Subject))
+lmer_mPFC_minus_baseline<-lmer(data= DROI_mPFC_plusmin, mPFC_activation.minus_baseline~Parent_Alone_num_c+(1|Subject))
 report(lmer_mPFC_minus_baseline)
 
 #check with sex
 lmer_amyg_l_plus_baseline_sex<-lmer(data= DROI_amyg_l_plusmin, amyg_l_activation.plus_baseline~SEX_num_c*Parent_Alone_num_c+(1|Subject))
 report(lmer_amyg_l_plus_baseline_sex)
+
+
 
 ```
 
