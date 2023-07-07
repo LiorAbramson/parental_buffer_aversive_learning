@@ -988,3 +988,54 @@ lmer_primmotor_plus_minus<-lmer(data= DROI_primmotor, primmotor_activation.plus_
 report(lmer_primmotor_plus_minus)
 ```
 
+#exploratory analysis- analyses only for children that reported in the debriefing that their parents did not raise their anxiety
+```{r}
+Ddebrief <- read.csv("../OSF/tracking files-dont_upload_online/debrief_data.csv")
+Ddebrief$Subject <- as.numeric(Ddebrief$Subject)
+Ddebrief <- Ddebrief[Ddebrief$CHILD_DEBRIEF_4_VERBATIM!="x" & Ddebrief$CHILD_DEBRIEF_4_VERBATIM !="",]
+
+#check that these are the same numbers
+subj_behav <- unique(DBehav_Longdif$Subject)
+subj_debrief <- unique(Ddebrief$Subject)
+#there is a note for subject 117 that felt sick although they didn't do the task (not sure it refers to the conditioning task). Otherwise, all the subjects that were debriefed did the task. Some of the subjects that did the task were not debriefed. 
+#note: the variable CHILD_DEBRIEF_4_FEEL_WHEN_PARENT_IN_RM is an old coding: 1= the parent raised anxiety, 0= the parent did not raise anxiety
+
+DBehav_Longdif <- merge (DBehav_Longdif,Ddebrief[,c("Subject","CHILD_DEBRIEF_4_VERBATIM","parent_feel_coded")], all.x=T, all.y=F)
+summary(as.factor(DBehav_Longdif$parent_feel_coded))
+
+#include in the behavioral analyses only those that the parent did not raise anxiety  
+  DBehav_Longdif <- DBehav_Longdif[DBehav_Longdif$parent_feel_coded!=-1,] %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  version_num = ifelse(version=="Alone",0,1),
+                  version_num_c = scale(version_num,scale=F),
+                  time_num = ifelse(time=="1Pre",0,1),
+                  time_num_c = scale(time_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F))
+
+  DBehav_Longdif <- DBehav_Longdif[!is.na(DBehav_Longdif$Subject),]
+   
+  
+  describeBy (data=DBehav_Longdif, LikeRESP~version*time)
+  model_like <-lmer(data= DBehav_Longdif, LikeRESP~version_num_c*time_num_c+(1|Subject))
+  report(model_like)
+  
+#check amygdala activation effects
+  DROI_amyg <- merge (DROI_amyg,Ddebrief[,c("Subject","CHILD_DEBRIEF_4_VERBATIM","parent_feel_coded")], all.x=T, all.y=F)
+  summary(as.factor(DROI_amyg$parent_feel_coded))
+  
+  #include in the behavioral analyses only those that the parent did not raise anxiety  
+  DROI_amyg <- DROI_amyg[DROI_amyg$parent_feel_coded!=-1,] %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F))
+
+  DROI_amyg <- DROI_amyg[!is.na(DROI_amyg$Subject),]
+  
+  describeBy (data=DROI_amyg, amyg_activation.noise_baseline~Parent_Alone)
+  model_like <-lmer(data= DROI_amyg, amyg_activation.noise_baseline~Parent_Alone+(1|Subject))
+  report(model_like)
+  
+```

@@ -1,0 +1,54 @@
+---
+title: "power analysis HLM"
+author: "Lior Abramson"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+rm(list=ls())
+
+##################################################################################################
+##POWER ANALYSIS_WP1
+library(Matrix)
+library(lme4)
+library(simr)
+#The model
+
+N <-39
+parent_contexts_num <- 2
+
+###simulating the variables
+#subject
+subject_one <-1:N
+subject <- 1:N*parent_contexts_num
+subject[subject>0] <-0
+for (i in 0:(N-1)) {
+  subject[(i*4+1):(i*4+4)] <- rep(subject_one[i+1],4)
+}
+
+#simulate the subject variable
+subject <- rep(1:N, each=parent_contexts_num)
+#simulate bold activation variable
+activation <- rnorm(n=N*parent_contexts_num, mean=0, sd=1)
+#simulate parent context variable
+parent_context <- rep(c(0,1),N)
+
+#form one data frame
+v<-cbind(subject, activation, parent_context)
+v<-as.data.frame(v)
+
+
+#simulate results with a small effect size
+b <- c(0, .25) #intercept, parental context effect
+varCor <- .01 #simulate participants' random intercept  
+s <- .5 #simulate residual variance
+
+model <- makeLmer(activation ~ parent_context +(1|subject), 
+                   fixef=b, VarCorr = varCor, sigma=s, data=v)
+
+summary(model)
+pow<-powerSim(model, nsim=1000)
+pow
+```
+

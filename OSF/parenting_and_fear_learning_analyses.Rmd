@@ -14,7 +14,7 @@ output: html_document
   if(is.null(dev.list()) == FALSE) dev.off()
 
 #Packages
-  packages <- c('reshape','psych','rstatix','tidyverse', 'Rmisc', 'lme4','ggpubr','report','gridExtra')
+  packages <- c('reshape','psych','tidyverse','Rmisc','lme4','ggplot','report')
   lapply(packages, require, character.only = TRUE)
 ```
 
@@ -43,7 +43,7 @@ output: html_document
   DBehav$time[!is.na(DBehav$LikePre.RESP)]  <-"Pre"
   DBehav$time[!is.na(DBehav$LikePost.RESP)] <-"Post"
   
-#create a variable indicating the time, the version (for stimuli counterbalance) and the stimulus (CS+/CS-)
+#create a variable indicating the time, the version (which fractals the subject watched) and the stimulus (CS+/CS-)
   DBehav$version_time_and_stim <- paste0(DBehav$Version,"_",DBehav$time,"_",DBehav$Shape)
   
 #take only relevant variables 
@@ -256,20 +256,10 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
                   time_num_c = scale(time_num,scale=F),
                   MRI_AGE_c = scale(MRI_AGE, scale=F))
    
-#multilevel linear regression - DECIDE IF REMOVE FROM FINAL OSF!!
-  model_like <-lmer(data= DBehav_Longdif, LikeRESP~version_num_c*time_num_c+(1|Subject))
-  report(model_like)
-  
 #multilevel linear regression controlling for age and sex 
-  model_like_control_age_sex <-lmer(data= DBehav_Longdif, LikeRESP~ version_num_c*time_num_c + SEX_num_c+MRI_AGE_c + (1|Subject))
-  report(model_like_control_age_sex)
-
-#although the interaction is not significant, explore the pattern separately for each parental context version
-   model_like_control_age_sex_parent <-lmer(data= DBehav_Longdif[DBehav_Longdif$version=="Parent",], LikeRESP~ time_num_c + SEX_num_c+MRI_AGE_c + (1|Subject))
-   report(model_like_control_age_sex_parent)
-   
-    model_like_control_age_sex_alone <-lmer(data= DBehav_Longdif[DBehav_Longdif$version=="Alone",], LikeRESP~ time_num_c + SEX_num_c+MRI_AGE_c + (1|Subject))
-   report(model_like_control_age_sex_alone)
+  model_like_control_sex_age <-lmer(data= DBehav_Longdif, 
+                                    LikeRESP~ version_num_c*time_num_c + SEX_num_c+MRI_AGE_c + (1|Subject))
+  report(model_like_control_sex_age)
 
 #visualization
   #a) summarize overall group effects by condition
@@ -294,17 +284,12 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
 
 #statistical test- nervous question
 ```{r}
-#multilevel linear regression 
-  model_nervous <-lmer(data= DBehav_Longdif, NervousRESP~version_num_c*time_num_c+(1|Subject))
-  report(model_nervous)
-  
 #multilevel linear regression controlling for age and sex 
-  model_nervous_control_sex_age <-lmer(data= DBehav_Longdif, NervousRESP~ 
-                                version_num_c*time_num_c +
-                                SEX_num_c+MRI_AGE_c+ (1|Subject))
+  model_nervous_control_sex_age <-lmer(data= DBehav_Longdif, 
+                                       NervousRESP~ version_num_c*time_num_c + SEX_num_c+MRI_AGE_c+ (1|Subject))
   report(model_nervous_control_sex_age)
 
-#find means for time regardless of parental context condition (since there is no interaction effect)
+#find means for time regardless of parental context condition (to better understand the main effect)
 #a) summarize overall group effects by condition
   sum_nervous_dif_se_both_parentcontextconds <- summarySE(data = DBehav_Longdif, measurevar="NervousRESP", groupvars =c("time"),
              na.rm = T, conf.interval = 0.95,.drop = TRUE)
@@ -393,15 +378,16 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
 #look at the descriptive statistics
   describeBy (data= DROI_mPFC, mPFC_activation.noise_baseline~Parent_Alone)
 
-#multilevel linear regression- main analysis
-  lmer_mPFC_noise_baseline<-lmer(data= DROI_mPFC, mPFC_activation.noise_baseline~Parent_Alone_num_c+(1|Subject))
-  report(lmer_mPFC_noise_baseline)
-
-#analysis controlling for sex and age
-  lmer_mPFC_noise_baseline_sex_age <- lmer(data=DROI_mPFC, mPFC_activation.noise_baseline~
-                                             Parent_Alone_num_c*SEX_num_c +
-                                             Parent_Alone_num_c*MRI_AGE_c + (1|Subject))
+#multilevel linear regression controlling for sex and age
+  lmer_mPFC_noise_baseline_sex_age <- lmer(data=DROI_mPFC, 
+                                           mPFC_activation.noise_baseline~ 
+                                             Parent_Alone_num_c*SEX_num_c + Parent_Alone_num_c*MRI_AGE_c + (1|Subject))
   report(lmer_mPFC_noise_baseline_sex_age)
+  
+#multilevel linear regression with no covariates
+  lmer_mPFC_noise_baseline <- lmer(data=DROI_mPFC, 
+                                           mPFC_activation.noise_baseline~ Parent_Alone_num_c + (1|Subject))
+  report(lmer_mPFC_noise_baseline)
 ```
 
 #test results- mPFC: CS+ vs. CS- contrast
@@ -409,15 +395,15 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
 #look at the descriptive statistics
   describeBy (data= DROI_mPFC, mPFC_activation.plus_minus~Parent_Alone)
 
-#multilevel linear regression- main analysis
+#multilevel linear regression controlling for sex and age
+  lmer_mPFC_plus_minus_sex_age <- lmer(data=DROI_mPFC, 
+                                       mPFC_activation.plus_minus~
+                                         Parent_Alone_num_c*SEX_num_c + Parent_Alone_num_c*MRI_AGE_c +(1|Subject))
+  report(lmer_mPFC_plus_minus_sex_age)
+  
+#multilevel linear regression with no covariates
   lmer_mPFC_plus_minus<-lmer(data= DROI_mPFC, mPFC_activation.plus_minus~Parent_Alone_num_c+(1|Subject))
   report(lmer_mPFC_plus_minus)
-
-#analysis controlling for sex and age
-  lmer_mPFC_plus_minus_sex_age <- lmer(data=DROI_mPFC, mPFC_activation.plus_minus~
-                                             Parent_Alone_num_c*SEX_num_c +
-                                             Parent_Alone_num_c*MRI_AGE_c +(1|Subject))
-  report(lmer_mPFC_plus_minus_sex_age)
 
 #see how many subjects show decrease and how many show increase according to parental context
   DROI_mPFC_wide <- DROI_mPFC_wide %>%
@@ -430,7 +416,7 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
   
   summary(as.factor(DROI_mPFC_wide$trend_mPFC_plusmin))
 
-#visualize results - separate colors for partcipants that showed increase or decrease in parental presence vs absence
+#visualize results - separate colors for participants that showed increase or decrease in parental presence vs absence
   plot_mPFC_plusmin <- ggplot(data = DROI_mPFC, 
                                  aes(group=interaction(Subject,trend_mPFC_plusmin), x=Parent_Alone,y = mPFC_activation.plus_minus, color=as.factor(trend_mPFC_plusmin)))+
     geom_line(aes(group=interaction(Subject,trend_mPFC_plusmin), x=Parent_Alone,y=mPFC_activation.plus_minus, color=as.factor(trend_mPFC_plusmin)), size=1)+
@@ -448,7 +434,7 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
 #change the data files each time to the nucleus mask you want to check: LB, CM, or SF 
 ```{r}
 #contrast 1
-  DROI_amyg_cond1 <- read.csv ("data/ROI_juelich_thr60_lbamyg_bilateral_resample_NL6Asym_cond1.csv")
+  DROI_amyg_cond1 <- read.csv ("data/ROI_juelich_thr60_cmamyg_bilateral_resample_NL6Asym_cond1.csv")
   DROI_amyg_cond1$Subject <- rep(valid_subj$Subject, each=2)
   DROI_amyg_cond1$Subject <- as.numeric(gsub("sub-","",DROI_amyg_cond1$Subject))
   DROI_amyg_cond1$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
@@ -456,7 +442,7 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
   DROI_amyg_cond1$order <- "cond1"
 
 #contrast 2
-  DROI_amyg_cond2 <- read.csv ("data/ROI_juelich_thr60_lbamyg_bilateral_resample_NL6Asym_cond2.csv")
+  DROI_amyg_cond2 <- read.csv ("data/ROI_juelich_thr60_cmamyg_bilateral_resample_NL6Asym_cond2.csv")
   DROI_amyg_cond2$Subject <- rep(valid_subj$Subject, each=2)
   DROI_amyg_cond2$Subject <- as.numeric(gsub("sub-","",DROI_amyg_cond2$Subject))
   DROI_amyg_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
@@ -491,15 +477,14 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
 #look at the descriptive statistics
   describeBy (data= DROI_amyg, amyg_activation.noise_baseline~Parent_Alone)
 
-#multilevel linear regression- main analysis
+#multilevel linear regression controlling for sex and age
+  lmer_amyg_noise_baseline_sex_age <- lmer(data=DROI_amyg, 
+                                           amyg_activation.noise_baseline~ Parent_Alone_num_c*SEX_num_c + Parent_Alone_num_c*MRI_AGE_c +(1|Subject))
+  report(lmer_amyg_noise_baseline_sex_age)
+  
+#multilevel linear regression with no covariates
   lmer_amyg_noise_baseline<-lmer(data= DROI_amyg, amyg_activation.noise_baseline~Parent_Alone_num_c+(1|Subject))
   report(lmer_amyg_noise_baseline)
-
-#analysis controlling for sex and age
-  lmer_amyg_noise_baseline_sex_age <- lmer(data=DROI_amyg, amyg_activation.noise_baseline~
-                                             Parent_Alone_num_c*SEX_num_c +
-                                             Parent_Alone_num_c*MRI_AGE_c +(1|Subject))
-  report(lmer_amyg_noise_baseline_sex_age)
 
 # since there is a significant age X parental context interaction in the LB amygdala, examine the results separately for males and females
   describe(data = DROI_amyg, amyg_activation.noise_baseline~SEX*Parent_Alone)
@@ -513,8 +498,7 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
 #see how many subjects show decrease and how many show increase according to parental context
   DROI_amyg_wide <- DROI_amyg_wide %>%
   mutate(trend_amyg_noise = ifelse(amyg_activation.noise_baseline.Parent>amyg_activation.noise_baseline.Alone,1,
-                        ifelse(amyg_activation.noise_baseline.Parent<amyg_activation.noise_baseline.Alone,-1,NA)),
-         )
+                        ifelse(amyg_activation.noise_baseline.Parent<amyg_activation.noise_baseline.Alone,-1,NA)))
 
   DROI_amyg <- merge(DROI_amyg,DROI_amyg_wide[,c("Subject","trend_amyg_noise")],
                               by="Subject", all.x=T, all.y=F)
@@ -540,15 +524,14 @@ plot_amyg_noise_baseline <- ggplot(data = DROI_amyg,
 #look at the descriptive statistics
   describeBy (data= DROI_amyg, amyg_activation.plus_minus~Parent_Alone)
 
-#multilevel linear regression- main analysis
+#multilevel linear regression controlling for sex and age
+  lmer_amyg_plus_minus_sex_age <- lmer(data=DROI_amyg, 
+                                       amyg_activation.plus_minus~ Parent_Alone_num_c*SEX_num_c + Parent_Alone_num_c*MRI_AGE_c + (1|Subject))
+  report(lmer_amyg_plus_minus_sex_age)
+  
+#multilevel linear regression with no covariates
   lmer_amyg_plus_minus<-lmer(data= DROI_amyg, amyg_activation.plus_minus~Parent_Alone_num_c+(1|Subject))
   report(lmer_amyg_plus_minus)
-
-#analysis controlling for sex and age
-  lmer_amyg_plus_minus_sex_age <- lmer(data=DROI_amyg, amyg_activation.plus_minus~
-                                             Parent_Alone_num_c*SEX_num_c +
-                                             Parent_Alone_num_c*MRI_AGE_c + (1|Subject))
-  report(lmer_amyg_plus_minus_sex_age)
 
 # since there is a significant age X parental context interaction in the SF amygdala, examine the results separately for males and females
   lmer_amyg_plus_minus_males <-lmer(data= DROI_amyg[DROI_amyg$SEX=="m",], 
