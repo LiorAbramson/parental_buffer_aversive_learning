@@ -353,7 +353,7 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
   DROI_mPFC <- merge(DROI_mPFC,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
                               by="Subject", all.x=T, all.y=F)
  
-#turn the independent variables to numeric and scale them
+#turn the independent variables to numeric and center them
   DROI_mPFC <- DROI_mPFC %>%
     dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
                   SEX_num_c = scale(SEX_num,scale=F),
@@ -459,7 +459,7 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
   DROI_amyg <- merge(DROI_amyg,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
                               by="Subject", all.x=T, all.y=F)
  
-#turn the independent variables to numeric and scale them
+#turn the independent variables to numeric and center them
 #create age groups- divide the sample according to children (under 11) and adolescents (age cutoff according to gee 2014)
    DROI_amyg <- DROI_amyg %>%
     dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
