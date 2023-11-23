@@ -1,7 +1,7 @@
 ---
 title: "parental_effects_on_fear_learning_analyses"
 author: "Lior Abramson"
-date: "November 2023"
+date: "March 2023"
 output: html_document
 ---
 
@@ -14,7 +14,7 @@ output: html_document
   if(is.null(dev.list()) == FALSE) dev.off()
 
 #Packages
-  packages <- c('reshape','psych','tidyverse','Rmisc','lme4','ggplot2','report')
+  packages <- c('reshape','psych','tidyverse','Rmisc','lme4','ggplot','report')
   lapply(packages, require, character.only = TRUE)
 ```
 
@@ -64,20 +64,13 @@ output: html_document
   DParentInfo <- read.csv("data/classical_conditioning_parental_presence_data.csv")
   DBehav_Wide <- merge(DBehav_Wide,DParentInfo[,c("Subject","Version_Parent","Version_Alone","First_Cond")], by="Subject", all.x=T, all.y=F)
 ```
-#create a long format of parental context information to attach to fMRI data
-```{r}
-  DParentInfoLong <- DParentInfo[,c("Subject","Scan_Parent","Scan_Alone")]
-  DParentInfoLong <- reshape(DParentInfoLong, idvar="Subject", timevar="Parent_Alone", 
-                               varying=colnames(DParentInfoLong)[2:3],direction="long",sep="_")
-  colnames(DParentInfoLong)[colnames(DParentInfoLong)=="Scan"] <- "order"
-```
 
 #add demographic details:
 #NOTE: this data is not shared online due to privacy considerations and IRB constraints
 ```{r}
 #import data
   DDemographics <- read.csv("../data/ELFK_demographics.csv")
-  DBehav_Wide <- merge(DBehav_Wide,DDemographics[,c("Subject","SEX","MRI_AGE","DEM_4_RACE_CHILD","DEM_4_RACE_CHILD_OTHER","AIOI_P1_EDU","AIOI_P2_EDU","AIOI_P1_Income","AIOI_P2_Income")], by="Subject", all.x=T, all.y=F)
+  DBehav_Wide <- merge(DBehav_Wide,DDemographics[,c("Subject","SEX","MRI_AGE","DEM_4_RACE_CHILD","DEM_4_RACE_CHILD_OTHER")], by="Subject", all.x=T, all.y=F)
   
 #check age, sex and race of the sample
   #age
@@ -86,58 +79,6 @@ output: html_document
   summary(as.factor(DBehav_Wide$SEX))
   #race
   summary(as.factor(DBehav_Wide$DEM_4_RACE_CHILD))
-  
-  #education-code education to a binary variable of less/more than a BA degree
-  DBehav_Wide <- DBehav_Wide%>%
-    mutate(edu_p1_binary = ifelse(AIOI_P1_EDU < 5,"<BA","BA>"),
-           edu_p2_binary = ifelse(AIOI_P2_EDU < 5,"<BA","BA>"),
-           edu_atleast1_BA = ifelse(edu_p1_binary=="BA>"|edu_p2_binary=="BA>","yes","no"))
-  summary(as.factor(DBehav_Wide$edu_atleast1_BA))
-  
-  #income
-  summary(as.factor(DBehav_Wide$AIOI_P1_Income))
-  summary(as.factor(DBehav_Wide$AIOI_P2_Income))
-  
-  #recode the likert scale income to reflect minimum (i.e., the parent makes at least this sum or more)
-  DBehav_Wide$AIOI_P1_Income_min <- 
-    as.numeric(recode(
-    DBehav_Wide$AIOI_P1_Income,
-    `1` = "0",
-    `2` = "10001",
-    `3` = "25001",
-    `4` = "40001",
-    `5` = "55001",
-    `6` = "70001",
-    `7` = "85001",
-    `8` = "100001",
-    `9` = "150001",
-    `10` = "200001",
-  ))
-  
-  
-  DBehav_Wide$AIOI_P2_Income_min <- 
-    as.numeric(recode(
-    DBehav_Wide$AIOI_P2_Income,
-    `1` = "0",
-    `2` = "10001",
-    `3` = "25001",
-    `4` = "40001",
-    `5` = "55001",
-    `6` = "70001",
-    `7` = "85001",
-    `8` = "100001",
-    `9` = "150001",
-    `10` = "200001",
-  ))
-  
- DBehav_Wide$income_min_household <- DBehav_Wide$AIOI_P1_Income_min+DBehav_Wide$AIOI_P2_Income_min
- 
- #how many make more than 75,157$ as a household (more than the median in New York for 2017-2021: https://www.census.gov/quickfacts/fact/table/NY,newyorkcountynewyork/INC110221)
- DBehav_Wide <- DBehav_Wide%>%
-   mutate(min_income_bin_median = ifelse(income_min_household>75157,1,0))
- 
- summary(as.factor(DBehav_Wide$min_income_bin_median))
-   
 ```
 
 #exclude participants (from both long and wide dataframes) and check demographic characteristics of final sample 
@@ -159,6 +100,8 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
   describe(DBehav_Wide$MRI_AGE)
   #sex
   summary(as.factor(DBehav_Wide$SEX))
+  #race
+  summary(as.factor(DBehav_Wide$DEM_4_RACE_CHILD))
 ```
 
 #create raw rating scores for each parental presence condition in the wide format
@@ -296,13 +239,6 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
 #add sex and age information
  DBehav_Longdif <- merge(DBehav_Longdif,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
                               by="Subject", all.x=T, all.y=F)
- 
- #add order information
- #temporarily switch variable name
- colnames(DParentInfoLong)[which(colnames(DParentInfoLong)=="Parent_Alone")] <- "version"
- DBehav_Longdif <- merge(DBehav_Longdif,DParentInfoLong, by=c("Subject","version"), all.x=T, all.y=F)
- #switch back the variable name for later merging
- colnames(DParentInfoLong)[which(colnames(DParentInfoLong)=="version")] <- "Parent_Alone"
 
 ```
 
@@ -310,18 +246,20 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
 2:: Behavioral analyses
 #statistical test- like question
 ```{r}
-#effect code binary independent variables and mean-center continuous variables
+#center independent variables
   DBehav_Longdif <- DBehav_Longdif %>%
-    dplyr::mutate(SEX_num = ifelse(SEX=="m",-1,1),
-                  version_num = ifelse(version=="Alone",-1,1),
-                  time_num = ifelse(time=="1Pre",-1,1),
-                  order_num = ifelse(order=="cond1",-1,1),
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  version_num = ifelse(version=="Alone",0,1),
+                  version_num_c = scale(version_num,scale=F),
+                  time_num = ifelse(time=="1Pre",0,1),
+                  time_num_c = scale(time_num,scale=F),
                   MRI_AGE_c = scale(MRI_AGE, scale=F))
    
-#multilevel linear regression controlling for age, sex, and order
-  model_like_control_sex_age_order <-lmer(data= DBehav_Longdif, 
-                                    LikeRESP~ version_num*time_num + SEX_num + MRI_AGE_c + order_num+ (1|Subject))
-  report(model_like_control_sex_age_order)
+#multilevel linear regression controlling for age and sex 
+  model_like_control_sex_age <-lmer(data= DBehav_Longdif, 
+                                    LikeRESP~ version_num_c*time_num_c + SEX_num_c+MRI_AGE_c + (1|Subject))
+  report(model_like_control_sex_age)
 
 #visualization
   #a) summarize overall group effects by condition
@@ -347,9 +285,9 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
 #statistical test- nervous question
 ```{r}
 #multilevel linear regression controlling for age and sex 
-  model_nervous_control_sex_age_order <-lmer(data= DBehav_Longdif, 
-                                       NervousRESP~ version_num*time_num + SEX_num +MRI_AGE_c+ order_num + (1|Subject))
-  report(model_nervous_control_sex_age_order)
+  model_nervous_control_sex_age <-lmer(data= DBehav_Longdif, 
+                                       NervousRESP~ version_num_c*time_num_c + SEX_num_c+MRI_AGE_c+ (1|Subject))
+  report(model_nervous_control_sex_age)
 
 #find means for time regardless of parental context condition (to better understand the main effect)
 #a) summarize overall group effects by condition
@@ -378,6 +316,14 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
 
 
 3:: Neural results
+#create a long format of parental context information to attach to fMRI data
+```{r}
+  DParentInfoLong <- DParentInfo[,c("Subject","Scan_Parent","Scan_Alone")]
+  DParentInfoLong <- reshape(DParentInfoLong, idvar="Subject", timevar="Parent_Alone", 
+                               varying=colnames(DParentInfoLong)[2:3],direction="long",sep="_")
+  colnames(DParentInfoLong)[colnames(DParentInfoLong)=="Scan"] <- "order"
+```
+
 #organize file-mPFC data
 ```{r}
 #condition 1
@@ -407,12 +353,13 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
   DROI_mPFC <- merge(DROI_mPFC,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
                               by="Subject", all.x=T, all.y=F)
  
-#do effect coding for categorical variables and center continous variables
+#turn the independent variables to numeric and center them
   DROI_mPFC <- DROI_mPFC %>%
-    dplyr::mutate(SEX_effectc = ifelse(SEX=="m",-1,1),
-                  Parent_Alone_effectc = ifelse(Parent_Alone=="Alone",-1,1),
-                  MRI_AGE_c = scale(MRI_AGE, scale=F),
-                  order_effectc = ifelse(order=="cond1",-1,1))
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F))
   
 #create a wide format for later plotting and visualization purposes 
   DROI_mPFC_wide <- reshape(DROI_mPFC, timevar="Parent_Alone",idvar="Subject", direction="wide")
@@ -431,14 +378,15 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
 #look at the descriptive statistics
   describeBy (data= DROI_mPFC, mPFC_activation.noise_baseline~Parent_Alone)
 
-#multilevel linear regression controlling for sex, age, and order
-  lmer_mPFC_noise_baseline_sex_age_order <- lmer(data=DROI_mPFC, 
+#multilevel linear regression controlling for sex and age
+  lmer_mPFC_noise_baseline_sex_age <- lmer(data=DROI_mPFC, 
                                            mPFC_activation.noise_baseline~ 
-                                             Parent_Alone_effectc*SEX_effectc + Parent_Alone_effectc*MRI_AGE_c + Parent_Alone_effectc*order_effectc + (1|Subject))
-  report(lmer_mPFC_noise_baseline_sex_age_order)
+                                             Parent_Alone_num_c*SEX_num_c + Parent_Alone_num_c*MRI_AGE_c + (1|Subject))
+  report(lmer_mPFC_noise_baseline_sex_age)
   
 #multilevel linear regression with no covariates
-  lmer_mPFC_noise_baseline <- lmer(data=DROI_mPFC, mPFC_activation.noise_baseline~ Parent_Alone_effectc + (1|Subject))
+  lmer_mPFC_noise_baseline <- lmer(data=DROI_mPFC, 
+                                           mPFC_activation.noise_baseline~ Parent_Alone_num_c + (1|Subject))
   report(lmer_mPFC_noise_baseline)
 ```
 
@@ -447,16 +395,15 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
 #look at the descriptive statistics
   describeBy (data= DROI_mPFC, mPFC_activation.plus_minus~Parent_Alone)
 
-#multilevel linear regression controlling for sex, age, and order
-  lmer_mPFC_plus_minus_sex_age_order <- lmer(data=DROI_mPFC, 
-                                           mPFC_activation.plus_minus~ 
-                                             Parent_Alone_effectc*SEX_effectc + Parent_Alone_effectc*MRI_AGE_c + Parent_Alone_effectc*order_effectc + (1|Subject))
-  report( lmer_mPFC_plus_minus_sex_age_order)
+#multilevel linear regression controlling for sex and age
+  lmer_mPFC_plus_minus_sex_age <- lmer(data=DROI_mPFC, 
+                                       mPFC_activation.plus_minus~
+                                         Parent_Alone_num_c*SEX_num_c + Parent_Alone_num_c*MRI_AGE_c +(1|Subject))
+  report(lmer_mPFC_plus_minus_sex_age)
   
 #multilevel linear regression with no covariates
-  lmer_mPFC_plus_minus <- lmer(data=DROI_mPFC, mPFC_activation.plus_minus~ Parent_Alone_effectc + (1|Subject))
+  lmer_mPFC_plus_minus<-lmer(data= DROI_mPFC, mPFC_activation.plus_minus~Parent_Alone_num_c+(1|Subject))
   report(lmer_mPFC_plus_minus)
-  
 
 #see how many subjects show decrease and how many show increase according to parental context
   DROI_mPFC_wide <- DROI_mPFC_wide %>%
@@ -512,12 +459,14 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
   DROI_amyg <- merge(DROI_amyg,DBehav_Wide[,c("Subject","SEX","MRI_AGE")],
                               by="Subject", all.x=T, all.y=F)
  
-#do effect coding for categorical variables and center continous variables
-  DROI_amyg <- DROI_amyg %>%
-    dplyr::mutate(SEX_effectc = ifelse(SEX=="m",-1,1),
-                  Parent_Alone_effectc = ifelse(Parent_Alone=="Alone",-1,1),
-                  MRI_AGE_c = scale(MRI_AGE, scale=F),
-                  order_effectc = ifelse(order=="cond1",-1,1))
+#turn the independent variables to numeric and center them
+#create age groups- divide the sample according to children (under 11) and adolescents (age cutoff according to gee 2014)
+   DROI_amyg <- DROI_amyg %>%
+    dplyr::mutate(SEX_num = ifelse(SEX=="m",0,1),
+                  SEX_num_c = scale(SEX_num,scale=F),
+                  Parent_Alone_num = ifelse(Parent_Alone=="Alone",0,1),
+                  Parent_Alone_num_c = scale(Parent_Alone_num,scale=F),
+                  MRI_AGE_c = scale(MRI_AGE, scale=F))
    
 #create a wide format for later plotting and visualization purposes 
   DROI_amyg_wide <- reshape(DROI_amyg, timevar="Parent_Alone",idvar="Subject", direction="wide")
@@ -528,22 +477,22 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
 #look at the descriptive statistics
   describeBy (data= DROI_amyg, amyg_activation.noise_baseline~Parent_Alone)
 
-#multilevel linear regression controlling for sex, age and order
- lmer_amyg_noise_baseline_sex_age_order <- lmer(data=DROI_amyg, 
-                                           amyg_activation.noise_baseline~ Parent_Alone_effectc*SEX_effectc + Parent_Alone_effectc*MRI_AGE_c + Parent_Alone_effectc*order_effectc +(1|Subject))
- report(lmer_amyg_noise_baseline_sex_age_order)
- 
-#multilevel linear regression with no covariates
- lmer_amyg_noise_baseline <- lmer(data=DROI_amyg, amyg_activation.noise_baseline~ Parent_Alone_effectc + (1|Subject))
- report(lmer_amyg_noise_baseline)
+#multilevel linear regression controlling for sex and age
+  lmer_amyg_noise_baseline_sex_age <- lmer(data=DROI_amyg, 
+                                           amyg_activation.noise_baseline~ Parent_Alone_num_c*SEX_num_c + Parent_Alone_num_c*MRI_AGE_c +(1|Subject))
+  report(lmer_amyg_noise_baseline_sex_age)
   
-# since there is a significant sex X parental context interaction in the LB amygdala, examine the results separately for males and females
+#multilevel linear regression with no covariates
+  lmer_amyg_noise_baseline<-lmer(data= DROI_amyg, amyg_activation.noise_baseline~Parent_Alone_num_c+(1|Subject))
+  report(lmer_amyg_noise_baseline)
+
+# since there is a significant age X parental context interaction in the LB amygdala, examine the results separately for males and females
   describe(data = DROI_amyg, amyg_activation.noise_baseline~SEX*Parent_Alone)
   
-  lmer_amyg_noise_baseline_males <-lmer(data= DROI_amyg[DROI_amyg$SEX=="m",], amyg_activation.noise_baseline~Parent_Alone_effectc + (1|Subject))
+  lmer_amyg_noise_baseline_males <-lmer(data= DROI_amyg[DROI_amyg$SEX=="m",], amyg_activation.noise_baseline~Parent_Alone_num_c + (1|Subject))
   report(lmer_amyg_noise_baseline_males)
   
-  lmer_amyg_noise_baseline_females <-lmer(data= DROI_amyg[DROI_amyg$SEX=="f",], amyg_activation.noise_baseline~Parent_Alone_effectc + (1|Subject))
+  lmer_amyg_noise_baseline_females <-lmer(data= DROI_amyg[DROI_amyg$SEX=="f",], amyg_activation.noise_baseline~Parent_Alone_num_c + (1|Subject))
   report(lmer_amyg_noise_baseline_females)
 
 #see how many subjects show decrease and how many show increase according to parental context
@@ -556,7 +505,7 @@ DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
   
   summary(as.factor(DROI_amyg_wide$trend_amyg_noise))
 
-#visualize results - separate colors for participants who showed increase or decrease in parental presence vs absence
+#visualize results - separate colors for partcipants that showed increase or decrease in parental presence vs absence
 plot_amyg_noise_baseline <- ggplot(data = DROI_amyg, 
                                aes(group=interaction(Subject,trend_amyg_noise), x=Parent_Alone,y = amyg_activation.noise_baseline, color=as.factor(trend_amyg_noise)))+
   geom_line(aes(group=interaction(Subject,trend_amyg_noise), x=Parent_Alone,y=amyg_activation.noise_baseline, color=as.factor(trend_amyg_noise)), size=1)+
@@ -575,37 +524,35 @@ plot_amyg_noise_baseline <- ggplot(data = DROI_amyg,
 #look at the descriptive statistics
   describeBy (data= DROI_amyg, amyg_activation.plus_minus~Parent_Alone)
 
-#multilevel linear regression controlling for sex, age and order
-  lmer_amyg_plus_minus_sex_age_order <- lmer(data=DROI_amyg, 
-                                           amyg_activation.plus_minus~ Parent_Alone_effectc*SEX_effectc + Parent_Alone_effectc*MRI_AGE_c + Parent_Alone_effectc*order_effectc +(1|Subject))
- report(lmer_amyg_plus_minus_sex_age_order)
- 
+#multilevel linear regression controlling for sex and age
+  lmer_amyg_plus_minus_sex_age <- lmer(data=DROI_amyg, 
+                                       amyg_activation.plus_minus~ Parent_Alone_num_c*SEX_num_c + Parent_Alone_num_c*MRI_AGE_c + (1|Subject))
+  report(lmer_amyg_plus_minus_sex_age)
+  
 #multilevel linear regression with no covariates
-  lmer_amyg_plus_minus <- lmer(data=DROI_amyg, amyg_activation.plus_minus~ Parent_Alone_effectc + (1|Subject))
- report(lmer_amyg_plus_minus)
+  lmer_amyg_plus_minus<-lmer(data= DROI_amyg, amyg_activation.plus_minus~Parent_Alone_num_c+(1|Subject))
+  report(lmer_amyg_plus_minus)
 
 # since there is a significant age X parental context interaction in the SF amygdala, examine the results separately for males and females
-  describe(data = DROI_amyg, amyg_activation.plus_minus~SEX*Parent_Alone)
-  
   lmer_amyg_plus_minus_males <-lmer(data= DROI_amyg[DROI_amyg$SEX=="m",], 
-                                    amyg_activation.plus_minus~Parent_Alone_effectc + (1|Subject))
+                                    amyg_activation.plus_minus~Parent_Alone_num_c + (1|Subject))
   report(lmer_amyg_plus_minus_males)
   
   lmer_amyg_plus_minus_females <-lmer(data= DROI_amyg[DROI_amyg$SEX=="f",], 
-                                      amyg_activation.plus_minus~Parent_Alone_effectc + (1|Subject))
+                                      amyg_activation.plus_minus~Parent_Alone_num_c + (1|Subject))
   report(lmer_amyg_plus_minus_females)
 ```
 
 #make a table for automatic reporting on lmer results with age and sex variables
 #change the first two lines each time to the lmer model you want to print
 ```{r}
-  report_lmer <- as.data.frame(report(lmer_amyg_plus_minus_sex_age_order))
-  sum_lmer <- summary(lmer_amyg_plus_minus_sex_age_order)
+  report_lmer <- as.data.frame(report(lmer_mPFC_plus_minus_sex_age))
+  sum_lmer <- summary(lmer_mPFC_plus_minus_sex_age)
 
-  lmer_table <- as.data.frame (matrix(nrow=11,ncol=2))
+  lmer_table <- as.data.frame (matrix(nrow=9,ncol=2))
   colnames(lmer_table) <- c("effect","report")
-  lmer_table$effect <- c("total R2","Fixed R2","Random variance","Fixed intercept","Sex","Age","Order","Parental context",
-                       "Parental context X Sex", "Parental context X Age", "Parental context X Order")
+  lmer_table$effect <- c("total R2","Fixed R2","Random variance","Fixed intercept","Sex","Age","Parental context",
+                       "Parental context X Sex", "Parental context X Age")
 
   lmer_table[1,2] <- round(report_lmer$Fit[which(report_lmer$Parameter=="R2 (conditional)")],2)
   lmer_table[2,2] <- round(report_lmer$Fit[which(report_lmer$Parameter=="R2 (marginal)")],2)
@@ -617,14 +564,14 @@ plot_amyg_noise_baseline <- ggplot(data = DROI_amyg,
   report_lmer$df_error[1],")=",round(report_lmer$t[which(report_lmer$Parameter=="(Intercept)")],2),", p=",
   round(report_lmer$p[which(report_lmer$Parameter=="(Intercept)")],3))
 
-  lmer_table[5,2] <- paste0("b=",round(report_lmer$Coefficient[which(report_lmer$Parameter=="SEX effectc")],2)," [",
-  round(report_lmer$CI_low[which(report_lmer$Parameter=="SEX effectc")],2), ",",
-  round(report_lmer$CI_high[which(report_lmer$Parameter=="SEX effectc")],2),"], ",
-"B=",round(report_lmer$Std_Coefficient[which(report_lmer$Parameter=="SEX effectc")],2)," [",
-  round(report_lmer$Std_Coefficient_CI_low[which(report_lmer$Parameter=="SEX effectc")],2), ",",
-  round(report_lmer$Std_Coefficient_CI_high[which(report_lmer$Parameter=="SEX effectc")],2),"], t(",
-  report_lmer$df_error[1],")=",round(report_lmer$t[which(report_lmer$Parameter=="SEX effectc")],2),", p=",
-  round(report_lmer$p[which(report_lmer$Parameter=="SEX effectc")],3))
+  lmer_table[5,2] <- paste0("b=",round(report_lmer$Coefficient[which(report_lmer$Parameter=="SEX num c")],2)," [",
+  round(report_lmer$CI_low[which(report_lmer$Parameter=="SEX num c")],2), ",",
+  round(report_lmer$CI_high[which(report_lmer$Parameter=="SEX num c")],2),"], ",
+"B=",round(report_lmer$Std_Coefficient[which(report_lmer$Parameter=="SEX num c")],2)," [",
+  round(report_lmer$Std_Coefficient_CI_low[which(report_lmer$Parameter=="SEX num c")],2), ",",
+  round(report_lmer$Std_Coefficient_CI_high[which(report_lmer$Parameter=="SEX num c")],2),"], t(",
+  report_lmer$df_error[1],")=",round(report_lmer$t[which(report_lmer$Parameter=="SEX num c")],2),", p=",
+  round(report_lmer$p[which(report_lmer$Parameter=="SEX num c")],3))
   
   lmer_table[6,2] <- paste0("b=",round(report_lmer$Coefficient[which(report_lmer$Parameter=="MRI AGE c")],2)," [",
   round(report_lmer$CI_low[which(report_lmer$Parameter=="MRI AGE c")],2), ",",
@@ -635,98 +582,38 @@ plot_amyg_noise_baseline <- ggplot(data = DROI_amyg,
   report_lmer$df_error[1],")=",round(report_lmer$t[which(report_lmer$Parameter=="MRI AGE c")],2),", p=",
   round(report_lmer$p[which(report_lmer$Parameter=="MRI AGE c")],3))
   
-  lmer_table[7,2] <- paste0("b=",round(report_lmer$Coefficient[which(report_lmer$Parameter=="order effectc")],2)," [",
-  round(report_lmer$CI_low[which(report_lmer$Parameter=="order effectc")],2), ",",
-  round(report_lmer$CI_high[which(report_lmer$Parameter=="order effectc")],2),"], ",
-  "B=",round(report_lmer$Std_Coefficient[which(report_lmer$Parameter=="order effectc")],2)," [",
-  round(report_lmer$Std_Coefficient_CI_low[which(report_lmer$Parameter=="order effectc")],2), ",",
-  round(report_lmer$Std_Coefficient_CI_high[which(report_lmer$Parameter=="order effectc")],2),"], t(",
-  report_lmer$df_error[1],")=",round(report_lmer$t[which(report_lmer$Parameter=="order effectc")],2),", p=",
-  round(report_lmer$p[which(report_lmer$Parameter=="order effectc")],3))
+  lmer_table[7,2] <- paste0("b=",round(report_lmer$Coefficient[which(report_lmer$Parameter=="Parent Alone num c")],2)," [",
+  round(report_lmer$CI_low[which(report_lmer$Parameter=="Parent Alone num c")],2), ",",
+  round(report_lmer$CI_high[which(report_lmer$Parameter=="Parent Alone num c")],2),"], ",
+  "B=",round(report_lmer$Std_Coefficient[which(report_lmer$Parameter=="Parent Alone num c")],2)," [",
+  round(report_lmer$Std_Coefficient_CI_low[which(report_lmer$Parameter=="Parent Alone num c")],2), ",",
+  round(report_lmer$Std_Coefficient_CI_high[which(report_lmer$Parameter=="Parent Alone num c")],2),"], t(",
+  report_lmer$df_error[1],")=",round(report_lmer$t[which(report_lmer$Parameter=="Parent Alone num c")],2),", p=",
+  round(report_lmer$p[which(report_lmer$Parameter=="Parent Alone num c")],3))
   
-  lmer_table[8,2] <- paste0("b=",round(report_lmer$Coefficient[which(report_lmer$Parameter=="Parent Alone effectc")],2)," [",
-  round(report_lmer$CI_low[which(report_lmer$Parameter=="Parent Alone effectc")],2), ",",
-  round(report_lmer$CI_high[which(report_lmer$Parameter=="Parent Alone effectc")],2),"], ",
-  "B=",round(report_lmer$Std_Coefficient[which(report_lmer$Parameter=="Parent Alone effectc")],2)," [",
-  round(report_lmer$Std_Coefficient_CI_low[which(report_lmer$Parameter=="Parent Alone effectc")],2), ",",
-  round(report_lmer$Std_Coefficient_CI_high[which(report_lmer$Parameter=="Parent Alone effectc")],2),"], t(",
-  report_lmer$df_error[1],")=",round(report_lmer$t[which(report_lmer$Parameter=="Parent Alone effectc")],2),", p=",
-  round(report_lmer$p[which(report_lmer$Parameter=="Parent Alone effectc")],3))
+  lmer_table[8,2] <- paste0("b=",round(report_lmer$Coefficient[which(report_lmer$Parameter=="Parent Alone num c * SEX num c")],2)," [",
+  round(report_lmer$CI_low[which(report_lmer$Parameter=="Parent Alone num c * SEX num c")],2), ",",
+  round(report_lmer$CI_high[which(report_lmer$Parameter=="Parent Alone num c * SEX num c")],2),"], ",
+  "B=",round(report_lmer$Std_Coefficient[which(report_lmer$Parameter=="Parent Alone num c * SEX num c")],2)," [",
+  round(report_lmer$Std_Coefficient_CI_low[which(report_lmer$Parameter=="Parent Alone num c * SEX num c")],2), ",",
+  round(report_lmer$Std_Coefficient_CI_high[which(report_lmer$Parameter=="Parent Alone num c * SEX num c")],2),"], t(",
+  report_lmer$df_error[1],")=",round(report_lmer$t[which(report_lmer$Parameter=="Parent Alone num c * SEX num c")],2),", p=",
+  round(report_lmer$p[which(report_lmer$Parameter=="Parent Alone num c * SEX num c")],3))
   
-  lmer_table[9,2] <- paste0("b=",round(report_lmer$Coefficient[which(report_lmer$Parameter=="Parent Alone effectc × SEX effectc")],2)," [",
-  round(report_lmer$CI_low[which(report_lmer$Parameter=="Parent Alone effectc × SEX effectc")],2), ",",
-  round(report_lmer$CI_high[which(report_lmer$Parameter=="Parent Alone effectc × SEX effectc")],2),"], ",
-  "B=",round(report_lmer$Std_Coefficient[which(report_lmer$Parameter=="Parent Alone effectc × SEX effectc")],2)," [",
-  round(report_lmer$Std_Coefficient_CI_low[which(report_lmer$Parameter=="Parent Alone effectc × SEX effectc")],2), ",",
-  round(report_lmer$Std_Coefficient_CI_high[which(report_lmer$Parameter=="Parent Alone effectc × SEX effectc")],2),"], t(",
-  report_lmer$df_error[1],")=",round(report_lmer$t[which(report_lmer$Parameter=="Parent Alone effectc × SEX effectc")],2),", p=",
-  round(report_lmer$p[which(report_lmer$Parameter=="Parent Alone effectc × SEX effectc")],3))
-  
-  lmer_table[10,2] <- paste0("b=",round(report_lmer$Coefficient[which(report_lmer$Parameter=="Parent Alone effectc × MRI AGE c")],2)," [",
-  round(report_lmer$CI_low[which(report_lmer$Parameter=="Parent Alone effectc × MRI AGE c")],2), ",",
-  round(report_lmer$CI_high[which(report_lmer$Parameter=="Parent Alone effectc × MRI AGE c")],2),"], ",
-  "B=",round(report_lmer$Std_Coefficient[which(report_lmer$Parameter=="Parent Alone effectc × MRI AGE c")],2)," [",
-  round(report_lmer$Std_Coefficient_CI_low[which(report_lmer$Parameter=="Parent Alone effectc × MRI AGE c")],2), ",",
-  round(report_lmer$Std_Coefficient_CI_high[which(report_lmer$Parameter=="Parent Alone effectc × MRI AGE c")],2),"], t(",
-  report_lmer$df_error[1],")=",round(report_lmer$t[which(report_lmer$Parameter=="Parent Alone effectc × MRI AGE c")],2),", p=",
-  round(report_lmer$p[which(report_lmer$Parameter=="Parent Alone effectc × MRI AGE c")],3))
-  
-  lmer_table[11,2] <- paste0("b=",round(report_lmer$Coefficient[which(report_lmer$Parameter=="Parent Alone effectc × order effectc")],2)," [",
-  round(report_lmer$CI_low[which(report_lmer$Parameter=="Parent Alone effectc × order effectc")],2), ",",
-  round(report_lmer$CI_high[which(report_lmer$Parameter=="Parent Alone effectc × order effectc")],2),"], ",
-  "B=",round(report_lmer$Std_Coefficient[which(report_lmer$Parameter=="Parent Alone effectc × order effectc")],2)," [",
-  round(report_lmer$Std_Coefficient_CI_low[which(report_lmer$Parameter=="Parent Alone effectc × order effectc")],2), ",",
-  round(report_lmer$Std_Coefficient_CI_high[which(report_lmer$Parameter=="Parent Alone effectc × order effectc")],2),"], t(",
-  report_lmer$df_error[1],")=",round(report_lmer$t[which(report_lmer$Parameter=="Parent Alone effectc × order effectc")],2),", p=",
-  round(report_lmer$p[which(report_lmer$Parameter=="Parent Alone effectc × order effectc")],3))
-  
-  write.csv(lmer_table, file="lmer_table.csv")
+  lmer_table[9,2] <- paste0("b=",round(report_lmer$Coefficient[which(report_lmer$Parameter=="Parent Alone num c * MRI AGE c")],2)," [",
+  round(report_lmer$CI_low[which(report_lmer$Parameter=="Parent Alone num c * MRI AGE c")],2), ",",
+  round(report_lmer$CI_high[which(report_lmer$Parameter=="Parent Alone num c * MRI AGE c")],2),"], ",
+  "B=",round(report_lmer$Std_Coefficient[which(report_lmer$Parameter=="Parent Alone num c * MRI AGE c")],2)," [",
+  round(report_lmer$Std_Coefficient_CI_low[which(report_lmer$Parameter=="Parent Alone num c * MRI AGE c")],2), ",",
+  round(report_lmer$Std_Coefficient_CI_high[which(report_lmer$Parameter=="Parent Alone num c * MRI AGE c")],2),"], t(",
+  report_lmer$df_error[1],")=",round(report_lmer$t[which(report_lmer$Parameter=="Parent Alone num c * MRI AGE c")],2),", p=",
+  round(report_lmer$p[which(report_lmer$Parameter=="Parent Alone num c * MRI AGE c")],3))
 
 ```
 
 #check correlations between the two contrasts of interest
 ```{r}
-cor.test(DROI_amyg$amyg_activation.noise_baseline[DROI_amyg$Parent_Alone=="Alone"],
-         DROI_amyg$amyg_activation.plus_minus[DROI_amyg$Parent_Alone=="Alone"])
-cor.test(DROI_amyg$amyg_activation.noise_baseline[DROI_amyg$Parent_Alone=="Parent"],
-         DROI_amyg$amyg_activation.plus_minus[DROI_amyg$Parent_Alone=="Parent"])
-
-
-cor.test(DROI_mPFC$mPFC_activation.noise_baseline[DROI_amyg$Parent_Alone=="Alone"],
-         DROI_mPFC$mPFC_activation.plus_minus[DROI_amyg$Parent_Alone=="Alone"])
-cor.test(DROI_mPFC$mPFC_activation.noise_baseline[DROI_amyg$Parent_Alone=="Parent"],
-         DROI_mPFC$mPFC_activation.plus_minus[DROI_amyg$Parent_Alone=="Parent"])
-
-```
-
-#as a control analysis- check correlations between the contrasts in the left primary motor cotext
-```{r}
-#contrast 1
-  DROI_primotor_cond1 <- read.csv ("data/ROI_primmotor_l_-37_-25_62_resampled_NL6Asym_cond1.csv")
-  DROI_primotor_cond1$Subject <- rep(valid_subj$Subject, each=2)
-  DROI_primotor_cond1$Subject <- as.numeric(gsub("sub-","",DROI_primotor_cond1$Subject))
-  DROI_primotor_cond1$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
-  DROI_primotor_cond1 <- reshape(DROI_primotor_cond1, timevar="contrast",idvar="Subject", direction="wide")
-  DROI_primotor_cond1$order <- "cond1"
-
-#contrast 2
-  DROI_primotor_cond2 <- read.csv ("data/ROI_primmotor_l_-37_-25_62_resampled_NL6Asym_cond2.csv")
-  DROI_primotor_cond2$Subject <- rep(valid_subj$Subject, each=2)
-  DROI_primotor_cond2$Subject <- as.numeric(gsub("sub-","",DROI_primotor_cond2$Subject))
-  DROI_primotor_cond2$contrast <- rep(c("noise_baseline","plus_minus"),times=nrow(valid_subj))
-  DROI_primotor_cond2 <- reshape(DROI_primotor_cond2, timevar="contrast",idvar="Subject", direction="wide")
-  DROI_primotor_cond2$order <- "cond2"
-
-#combine conditions
-  DROI_primotor <- rbind(DROI_primotor_cond1,DROI_primotor_cond2)
-
-#merge with parent/alone version
-  DROI_primotor <- merge(DROI_primotor,DParentInfoLong, by=c("Subject","order"), all.x=T, all.y=F)
-  
-#check correlation between the contrasts
-  cor.test(DROI_primotor$primotor_activation.noise_baseline[DROI_primotor$Parent_Alone=="Alone"],
-         DROI_primotor$primotor_activation.plus_minus[DROI_primotor$Parent_Alone=="Alone"])
-  cor.test(DROI_primotor$primotor_activation.noise_baseline[DROI_primotor$Parent_Alone=="Parent"],
-         DROI_primotor$primotor_activation.plus_minus[DROI_primotor$Parent_Alone=="Parent"])
+cor.test(DROI_amyg$amyg_activation.noise_baseline,DROI_amyg$amyg_activation.plus_minus)
+cor.test(DROI_mPFC$mPFC_activation.noise_baseline,DROI_mPFC$mPFC_activation.plus_minus)
 ```
 
