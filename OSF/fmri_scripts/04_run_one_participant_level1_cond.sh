@@ -1,5 +1,6 @@
 #!/bin/bash
 #!/bin/sh
+#XXX=an anonymized server path
 
 #SBATCH --account=psych
 #SBATCH --job-name=level1
@@ -15,7 +16,7 @@
 subj=$1
 
 # 2) navigate to where the fsl singularity image is 
-cd /burg/psych/users/elfk/
+cd XXX/
 
 # 3) load the singularity software
 module load singularity
@@ -25,5 +26,5 @@ echo "Running fsl feat level-1 on ${subj} at cond1"
 
 # 5) Run fsl from the singularity container
 singularity run -c -e fsl_nebraska.sif feat \
-/burg/psych/users/elfk/la2908/derivatives/05_level1/smoothed_fin_contrasts_skulstrip/level1_fsf/${subj}/task-cond1/${subj}_task-cond1_run-1_design.fsf 
+XXX/derivatives/05_level1/smoothed_fin_contrasts_skulstrip/level1_fsf/${subj}/task-cond1/${subj}_task-cond1_run-1_design.fsf 
 

@@ -1,6 +1,7 @@
 #!/bin/sh
+#XXX = an anonymized server path
 
-#SBATCH --account=psych
+#SBATCH --account=XXX
 #SBATCH --job-name=fmriprep
 #SBATCH -c 12
 #SBATCH --time=11:59:00
@@ -10,7 +11,7 @@
 
 # 1) define the participant object name to be input into the fMRIPrep function
 # ID number of subject you want to run; $1 is used when running a batch of participants
-# To run one subject, specify the specific ID number after the --participant flag (e.g. sub-PA001)
+# To run one subject, specify the specific ID number after the --participant flag (e.g. sub-PA100)
 subj=$1
 
 # 2) load the singularity software
@@ -21,10 +22,10 @@ echo "Running fMRIPrep on participant $subj without fieldmaps"
 
 # 4) Run fmriprep from the singularity container
 singularity exec -e \
-/burg/psych/users/elfk/fmriprep_21.0.1.sif fmriprep \
-/burg/psych/users/elfk/bids/ \
-/burg/psych/users/elfk/la2908/derivatives/01_fmriprep/ \
---fs-license-file /burg/psych/users/elfk/la2908/code/cond/01_fmriprep/license.txt \
+XXX/fmriprep_21.0.1.sif fmriprep \
+XXX/bids/ \
+XXX/derivatives/01_fmriprep/ \
+--fs-license-file XXX/01_fmriprep/license.txt \
 participant \
 --participant_label $subj \
 --skip-bids-validation \
@@ -33,7 +34,7 @@ participant \
 --ignore fieldmaps \
 --nthreads 8 \
 --random-seed 24 \
---fs-license-file /burg/psych/users/elfk/la2908/code/cond/01_fmriprep/license.txt \
+--fs-license-file XXX/01_fmriprep/license.txt \
 --fs-no-reconall \
 --output-spaces MNI152NLin6Asym:res-2 \
 --dummy-scans 4

@@ -1,0 +1,148 @@
+Subject_real_id,Subject,SEX,BEHAV_AGE,MRI_AGE,DEM_4_RACE_CHILD,DEM_4_RACE_CHILD_OTHER,DEM_5_ETHNICITY,DEM_6_NUMOLDSIBS,DEM_7_NUMYOUNGSIBS,PARENT_SEX,PARENT_RACE,PARENT_RACE_SPEC,PARENT_ETHNICITY,PARENT_NUMOLDSIBS,PARENT_NUMYOUNGSIBS,AIOI_P1_EDU,AIOI_P2_EDU,AIOI_P1_Income,AIOI_P2_Income,P1_income_raw,P2_income_raw,P1_income_numeric,P2_income_numeric
+1,,m,15.5,NA,White (Non-Hispanic),,,0,1,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,1,8,8,7,6,100000,85000,100000,85000
+2,104,f,9.69,9.98,Hispanic,,,3,0,Female,Hispanic,,Hispanic or Latino,1,0,2,2,3,NA,30000,,30000,
+3,107,m,11.26,11.55,African American/Black,,,0,0,Female,Hispanic,,Hispanic or Latino,1,0,2,2,3,NA,,,,
+4,110,m,13.8,14.28,Hispanic,,,1,2,Female,Hispanic,,Hispanic or Latino,1,0,2,2,3,NA,,,,
+5,113,f,17.07,17.55,Hispanic,,,0,3,Female,Hispanic,,Hispanic or Latino,1,0,2,2,3,NA,,,,
+6,,m,5.43,5.53,Asian-American,,,0,0,Female,Asian-American,,Not Hispanic or Latino,0,1,6,8,8,8,$140K,$120K,140000,120000
+7,118,f,10.71,10.79,NA,NA,NA,NA,NA,Male,Hispanic,,Hispanic or Latino,0,2,6,NA,3,NA,32400,,32400,
+8,,f,6.05,NA,NA,NA,NA,NA,NA,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,1,5,NA,NA,NA,,,,
+9,,f,7.74,NA,White (Non-Hispanic),,,0,2,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,1,5,NA,NA,NA,,,,
+10,125,f,6.37,6.65,NA,NA,NA,NA,NA,Female,Other,Turkish,,4,0,NA,NA,NA,NA,,,,
+11,128,m,9.55,9.83,NA,NA,NA,NA,NA,Female,Other,Turkish,,4,0,NA,NA,NA,NA,,,,
+12,,f,11.98,12.26,NA,NA,NA,NA,NA,Female,Other,Turkish,,4,0,NA,NA,NA,NA,,,,
+13,133,f,14.04,14.21,White (Non-Hispanic),,,1,0,Male,White (Non-Hispanic),,Not Hispanic or Latino,1,1,6,8,7,10,,,,
+14,,f,15.84,15.85,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,,,,
+15,,m,15.86,15.87,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,,,,
+16,140,f,10.77,11.35,Hispanic,,,1,0,Female,Hispanic,,Hispanic or Latino,5,3,5,7,10,10,700000,700000,700000,700000
+17,,m,16.8,NA,Hispanic,,,0,1,Female,Hispanic,,Hispanic or Latino,5,3,8,7,10,10,600000,n/a,600000,n/a
+18,,m,12.04,NA,White (Non-Hispanic),,,0,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,1,7,6,7,5,95k,58k,95000,58000
+19,,f,14.05,NA,White (Non-Hispanic),,,1,0,Female,,,,2,0,8,7,9,NA,>200K,>200k comb,>200K,>200k comb
+20,,m,16,NA,White (Non-Hispanic),,,0,1,Female,,,,2,0,8,7,9,NA,,,,
+21,,m,6.6,6.75,"African American/Black,Hispanic",,,2,0,Female,Hispanic,,Hispanic or Latino,0,1,3,NA,NA,NA,,,,
+22,153,f,13.3,13.45,"African American/Black,Hispanic",,,0,2,Female,Hispanic,,Hispanic or Latino,0,1,3,NA,NA,NA,,,,
+23,,f,4.68,NA,NA,NA,NA,NA,NA,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,3,5,5,6,9,80000,"$10,000 unstable",80000,10000
+24,158,m,6.92,7.2,White (Non-Hispanic),,,1,2,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,3,8,8,8,9,,,,
+25,161,f,8.47,8.75,NA,NA,NA,NA,NA,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,3,5,5,6,9,,,,
+26,,f,15.94,NA,NA,NA,NA,NA,NA,Female,Hispanic,,Hispanic or Latino,2,0,5,NA,NA,NA,UNEMPLOYED,,0,
+27,,m,11.29,11.34,"African American/Black,Asian-American,White (Non-Hispanic),Other",African/German/East Indian,,0,0,Female,"African American/Black,Asian-American,White (Non-Hispanic),Other",African/East Indian/ German,Not Hispanic or Latino,0,7,4,NA,2,NA,20000,,20000,
+28,,m,6.52,NA,White (Non-Hispanic),,,0,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,0,6,8,1,10,5000,250000,5000,250000
+29,,m,6.66,NA,White (Non-Hispanic),,,0,1,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,1,6,6,7,8,95000,120000,95000,120000
+30,,m,5.91,NA,NA,NA,NA,NA,NA,Female,African American/Black,,,1,3,8,NA,6,NA,80000,,80000,
+31,,f,4.42,NA,NA,NA,NA,NA,NA,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,1,5,5,NA,7,,87000,,87000
+32,176,m,7.57,8.12,White (Non-Hispanic),,,1,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,2,0,5,8,6,10,80000,400000,80000,400000
+33,179,m,10.29,10.84,White (Non-Hispanic),,,0,1,Female,White (Non-Hispanic),,Not Hispanic or Latino,2,0,5,8,6,10,,,,
+34,182,f,8.41,8.91,White (Non-Hispanic),,,0,1,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,0,7,5,9,9,175000,200000,175000,200000
+35,185,f,8.41,8.91,White (Non-Hispanic),,,1,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,0,7,5,9,9,,,,
+36,188,f,15.99,16.18,White (Non-Hispanic),,,1,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,2,0,6,6,5,7,70K,95K,70000,95000
+37,191,f,17.29,17.48,White (Non-Hispanic),,,0,1,Female,White (Non-Hispanic),,Not Hispanic or Latino,2,0,6,6,5,7,,,,
+38,,f,12.87,NA,"African American/Black,Hispanic",,,1,0,Female,Hispanic,,Hispanic or Latino,0,2,5,5,3,5,,,,
+39,,m,6.88,7.06,Hispanic,,,2,0,Female,Hispanic,,Hispanic or Latino,0,1,5,4,4,4,,,,
+40,,m,9.27,NA,Hispanic,,,1,1,Female,Hispanic,,Hispanic or Latino,0,1,5,4,4,4,,,,
+41,200,f,14.83,15.01,Hispanic,,,0,2,Female,Hispanic,,Hispanic or Latino,0,1,6,4,8,4,135000,46000,135000,46000
+42,203,m,8.56,8.73,"African American/Black,American Indian or Alaska Native,Asian-American,White (Non-Hispanic)",,Not Hispanic or Latino,0,0,Female,Asian-American,,Not Hispanic or Latino,2,0,6,5,8,3,,,,
+43,206,m,9.71,9.81,White (Non-Hispanic),,,1,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,0,6,6,NA,4,,55000,,55000
+44,209,f,9.1,9.21,"Asian-American,White (Non-Hispanic)",,,1,0,Female,"Asian-American,White (Non-Hispanic)",,Not Hispanic or Latino,0,0,7,6,8,1,125000,6000,125000,6000
+45,212,f,10.04,10.22,"Asian-American,White (Non-Hispanic)",,,0,1,Female,"Asian-American,White (Non-Hispanic)",,Not Hispanic or Latino,0,0,7,6,8,1,,,,
+46,,f,9.69,NA,"Asian-American,White (Non-Hispanic)",,,"1 half sister, 1 full sister",0,Female,"Asian-American,White (Non-Hispanic)",,Not Hispanic or Latino,0,1,7,8,5,8,70000,150000,70000,150000
+47,,m,12.18,NA,White (Non-Hispanic),,,1,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,5,5,6,7,8,100000,125000,100000,125000
+48,,m,14.1,NA,White (Non-Hispanic),,,0,1,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,5,5,6,7,8,,,,
+49,221,m,13.91,13.92,Asian-American,,,0,0,Male,Asian-American,,Not Hispanic or Latino,1,0,5,6,3,1,30000,4000,30000,4000
+50,224,m,7.13,7.17,"African American/Black,American Indian or Alaska Native,White (Non-Hispanic)",,,0,0,Female,"African American/Black,American Indian or Alaska Native",,,2,2,5,6,8,1,$135K,,135000,
+51,227,m,12.09,12.14,White (Non-Hispanic),,,2,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,1,7,8,9,10,165000,280000,165000,280000
+52,230,m,16.38,16.43,White (Non-Hispanic),,,1,1,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,1,7,8,9,10,,,,
+53,,m,4.56,NA,Asian-American,,,1,0,Female,Asian-American,,Not Hispanic or Latino,1,0,4,4,NA,NA,,,,
+54,,m,5.68,NA,Hispanic,,,,,Female,Hispanic,,Hispanic or Latino,1,1,5,NA,NA,NA,,,,
+55,,f,9.18,NA,Hispanic,,,0,1,Female,Hispanic,,Hispanic or Latino,1,1,5,NA,NA,NA,,,,
+56,239,m,8.65,8.67,Hispanic,,Hispanic or Latino,1,0,Female,Hispanic,,Hispanic or Latino,4,1,5,5,NA,NA,,,,
+57,242,f,11.23,11.24,Asian-American,,,1,2,Female,Asian-American,,Not Hispanic or Latino,1,1,7,7,NA,NA,,,,
+58,245,m,13.03,13.04,Asian-American,,,0,1,Female,Asian-American,,Not Hispanic or Latino,1,1,7,7,NA,NA,,,,
+59,,m,4.86,NA,"African American/Black,Hispanic",,,0,0,Female,Hispanic,,Hispanic or Latino,0,1,7,2,8,3,120K,30K,12000,30000
+60,,m,16.62,16.7,White (Non-Hispanic),,Not Hispanic or Latino,0,0,Male,White (Non-Hispanic),,Not Hispanic or Latino,3,0,7,6,10,NA,,,,
+61,,m,8.62,8.76,African American/Black,,,1,0,Female,African American/Black,,,0,2,4,2,1,1,1500,2500,1500,2500
+62,254,f,10.17,10.25,African American/Black,,Not Hispanic or Latino,1,3,Female,African American/Black,,Not Hispanic or Latino,3,5,4,3,NA,NA,,,,
+63,,f,5.68,5.72,African American/Black,,,0,1,Female,African American/Black,,,1,1,5,5,7,6,95000,82000,95000,82000
+64,,f,5.75,NA,"African American/Black,American Indian or Alaska Native,Asian-American,Hispanic,White (Non-Hispanic)",,,1,0,Female,Hispanic,,Hispanic or Latino,0,1,6,NA,8,6,145000,80000,145000,80000
+65,261,m,9.99,10.11,"African American/Black,American Indian or Alaska Native,Asian-American,Hispanic,White (Non-Hispanic)",,,0,1,Female,Hispanic,,Hispanic or Latino,0,1,6,NA,8,6,,,,
+66,264,m,9.03,9.07,Asian-American,,Hispanic or Latino,2,0,Male,Hispanic,,Hispanic or Latino,1,1,2,NA,NA,1,,,,
+67,,m,8.27,NA,African American/Black,,,0,0,Female,African American/Black,,,0,1,6,NA,5,NA,"75,000+",,75000,
+68,,m,4.83,NA,African American/Black,,,1,2,Female,African American/Black,,,0,2,2,2,3,NA,,,,
+69,,f,6.82,NA,African American/Black,,,0,3,Female,African American/Black,,,0,2,2,2,3,NA,40000,unknown,40000,unknown
+70,,f,9.42,NA,African American/Black,,Not Hispanic or Latino,0,1,Female,African American/Black,,Not Hispanic or Latino,3,0,8,8,3,3,,,,
+71,275,m,12.13,12.19,NA,NA,NA,NA,NA,Female,"African American/Black,Hispanic",,Hispanic or Latino,0,10,4,NA,3,NA,,,,
+72,278,f,10.42,10.51,African American/Black,,Not Hispanic or Latino,0,0,Female,African American/Black,,Not Hispanic or Latino,0,1,6,6,4,6,,,,
+73,,f,6.89,NA,African American/Black,,,1,1,Female,,,,,,8,8,7,8,100000,110000,100000,110000
+74,283,f,14.45,14.91,African American/Black,,,1,1,Female,,,,,,8,8,7,8,,,,
+75,286,m,15.86,16.32,African American/Black,,,0,2,Female,,,,,,3,3,7,8,,,,
+76,289,m,10.23,10.38,White (Non-Hispanic),,Not Hispanic or Latino,1,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,2,7,NA,7,8,,,,
+77,292,f,11.18,11.33,White (Non-Hispanic),,Not Hispanic or Latino,0,1,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,2,7,NA,7,8,,,,
+78,,m,4.9,NA,African American/Black,,,1,0,Female,African American/Black,,,2,0,4,NA,4,NA,42000,,42000,
+79,,f,6.32,NA,NA,NA,NA,NA,NA,Female,"African American/Black,Asian-American",,Not Hispanic or Latino,2,1,4,5,3,4,30000,50000,30000,50000
+80,299,m,16.65,16.7,African American/Black,,Not Hispanic or Latino,0,1,Female,"African American/Black,Asian-American",,Not Hispanic or Latino,2,1,4,5,3,4,,,,
+81,302,f,9.11,9.29,African American/Black,,Not Hispanic or Latino,3,2,Female,African American/Black,,Not Hispanic or Latino,5,4,4,5,3,NA,,,,
+82,305,f,9.11,9.34,African American/Black,,,4,1,Female,African American/Black,,Not Hispanic or Latino,5,4,4,5,3,NA,,,,
+83,308,f,11.61,11.8,African American/Black,,,2,3,Female,African American/Black,,Not Hispanic or Latino,5,4,4,5,3,NA,,,,
+84,311,f,14.29,14.48,NA,NA,NA,NA,NA,Female,African American/Black,,Not Hispanic or Latino,5,4,4,5,3,NA,,,,
+85,314,f,16.44,16.61,NA,NA,NA,NA,NA,Female,African American/Black,,Not Hispanic or Latino,5,4,4,5,3,NA,,,,
+86,317,m,9.02,9.06,Hispanic,,Hispanic or Latino,1,0,Female,Hispanic,,Hispanic or Latino,14,9,7,6,5,5,,,,
+87,320,m,14.83,14.87,Hispanic,,,0,0,Female,Hispanic,,Hispanic or Latino,14,9,7,6,5,5,,,,
+88,323,f,9.39,9.51,Hispanic,,Hispanic or Latino,1,2,Male,"Hispanic,White (Non-Hispanic)",,Hispanic or Latino,1,1,4,4,3,3,,,,
+89,326,f,10.66,10.78,"Hispanic,White (Non-Hispanic)",,Hispanic or Latino,0,3,Male,"Hispanic,White (Non-Hispanic)",,Hispanic or Latino,1,1,4,4,3,3,,,,
+90,329,f,9.11,9.2,Hispanic,,Hispanic or Latino,0,0,Female,Hispanic,,Hispanic or Latino,2,0,2,1,5,NA,,,,
+91,,f,10.69,NA,White (Non-Hispanic),,Not Hispanic or Latino,0,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,1,7,NA,7,NA,,,,
+92,334,f,10.22,10.37,NA,NA,NA,NA,NA,Female,Hispanic,,Hispanic or Latino,0,0,5,5,NA,9,,,,
+93,,m,4.99,NA,White (Non-Hispanic),,Not Hispanic or Latino,0,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,1,5,4,NA,2,,,,
+94,,m,6.06,NA,"African American/Black,Hispanic",,,3,0,Female,"African American/Black,Hispanic",,Hispanic or Latino,0,10,4,NA,3,NA,,,,
+95,341,f,12.32,12.49,African American/Black,,Not Hispanic or Latino,0,0,Female,African American/Black,,Not Hispanic or Latino,5,5,6,6,5,NA,,,,
+96,,m,13.83,NA,White (Non-Hispanic),,,0,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,0,6,6,NA,8,,,,
+97,,f,14.61,14.67,White (Non-Hispanic),,,,,Male,White (Non-Hispanic),,Not Hispanic or Latino,0,0,6,8,NA,NA,,,,
+98,,f,9.41,9.54,Asian-American,,Not Hispanic or Latino,1,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,0,6,NA,7,NA,,,,
+99,,f,15.06,15.07,Other, ,Not Hispanic or Latino, , ,Male,Other, ,Not Hispanic or Latino, , ,6,6,5,8,,,,
+100,,f,7.66,7.86,Asian-American,,Not Hispanic or Latino,1,0,Male,White (Non-Hispanic),,Not Hispanic or Latino,1,0,6,6,10,9,,,,
+101,,f,17.09,17.11,"Asian-American,Native Hawaiian or other Pacific Islander",,Not Hispanic or Latino,0,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,1,4,4,NA,NA,,,,
+102,,f,17.28,17.45,Asian-American,,Not Hispanic or Latino,0,1,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,2,5,5,7,2,,,,
+103,,f,13.98,14.08,Asian-American,,Not Hispanic or Latino,0,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,2,0,7,6,6,5,,,,
+104,,f,11.07,NA,Asian-American,,,0,1,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,1,4,2,NA,5,,,,
+105,,m,11.4,NA,Asian-American,,,1,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,1,4,2,NA,5,,,,
+106,,m,11.09,11.16,Hispanic,,Hispanic or Latino,2,1,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,2,6,NA,5,NA,,,,
+107,,f,15.09,NA,Asian-American,,Not Hispanic or Latino,1,2,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,2,6,NA,5,NA,,,,
+108,,f,17.07,17.15,Asian-American,,Not Hispanic or Latino,0,3,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,2,6,NA,5,NA,,,,
+109,,f,17.43,17.49,Asian-American,,Not Hispanic or Latino,0,0,Male,White (Non-Hispanic),,Not Hispanic or Latino,2,0,7,8,7,5,,,,
+110,,f,12.5,NA,Asian-American,,Not Hispanic or Latino,1,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,2,1,6,NA,7,NA,,,,
+111,,f,14.38,14.4,Asian-American,,Not Hispanic or Latino,0,1,Female,White (Non-Hispanic),,Not Hispanic or Latino,2,1,6,NA,7,NA,,,,
+112,,f,16.26,16.36,African American/Black,,Not Hispanic or Latino,4,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,1,6,NA,5,NA,,,,
+113,,f,15.08,NA,NA,NA,NA,NA,NA,Female,,,,,,NA,NA,NA,NA,,,,
+114,,m,7.6,8.21,White (Non-Hispanic),,Not Hispanic or Latino,"1 (biological, does not live with child)",0,Female,,,,,,NA,NA,NA,NA,,,,
+115,,m,11.44,11.45,African American/Black,,Not Hispanic or Latino,1,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,4,6,4,NA,NA,,,,
+116,,m,9.02,9.02,Asian-American,,Not Hispanic or Latino,3,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,2,0,5,5,NA,9,,,,
+117,,m,10.42,10.43,Asian-American,,Not Hispanic or Latino,2,1,Female,White (Non-Hispanic),,Not Hispanic or Latino,2,0,5,5,NA,9,,,,
+118,,f,11.73,11.73,Other,Maya indigenous,Hispanic or Latino,0,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,0,6,6,9,NA,,,,
+119,,f,6.09,NA,African American/Black,,Not Hispanic or Latino,0,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,1,6,NA,8,NA,,,,
+120,,f,8.01,8.05,Other,Eurasian,Not Hispanic or Latino,1,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,2,5,NA,8,NA,,,,
+121,,f,7.86,7.92,"Asian-American,Native Hawaiian or other Pacific Islander",,Not Hispanic or Latino,2,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,0,6,5,NA,10,,,,
+122,,f,6.74,6.85,African American/Black,,,1,1,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,0,7,6,8,8,,,,
+123,,m,9.42,NA,NA,NA,NA,NA,NA,Female,,,,,,NA,NA,NA,NA,,,,
+124,,M,13.77,13.8,White (Non-Hispanic),,Not Hispanic or Latino,0,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,0,NA,NA,NA,NA,,,,
+125,,m,9.11,NA,NA,NA,NA,NA,NA,Female,,,,,,NA,NA,NA,NA,,,,
+126,,f,17.66,16.74,Asian-American,,Not Hispanic or Latino,,,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,0,8,8,7,10,,,,
+127,,f,7.04,NA,Asian-American,,Not Hispanic or Latino,1 (plus 1 deceased),0,Female,African American/Black,,Not Hispanic or Latino,1,0,6,8,7,7,,,,
+128,,m,11.39,11.43,Other,Chinese,,1,0,Female,Hispanic,,Hispanic or Latino,1,0,6,6,6,2,,,,
+130,,m,11.38,11.38,Asian-American,,Not Hispanic or Latino,1,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,1,4,6,NA,8,,,,
+131,,m,13.3,13.31,Asian-American,,,,,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,1,4,6,NA,8,,,,
+132,,f,17.62,17.63,White (Non-Hispanic),,,1 + 1 in Russia,1 in Russia,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,0,8,5,7,2,,,,
+133,,m,11.41,NA,Asian-American,,Not Hispanic or Latino,unknown birth siblings no adopted siblings,unknown birth siblings no adopted siblings,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,1,5,6,5,5,,,,
+134,,f,15.4,15.41,Asian-American,,Not Hispanic or Latino,4,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,0,7,6,7,6,,,,
+135,,f,16.11,16.12,Asian-American,,Not Hispanic or Latino,3,1,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,0,7,6,7,6,,,,
+137,,f,9.34,9.34,NA,NA,NA,NA,NA,Female,,,,,,NA,NA,NA,NA,,,,
+138,,f,9.64,NA,Hispanic,,Hispanic or Latino,0,1,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,0,6,6,7,5,,,,
+139,,f,12.52,12.57,Asian-American,,Not Hispanic or Latino,1,1,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,1,6,6,8,10,,,,
+140,,f,11.57,11.63,Hispanic,,Hispanic or Latino,1,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,1,5,NA,6,NA,,,,
+141,,f,12.55,12.61,African American/Black,,Not Hispanic or Latino,0,1,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,1,5,NA,6,NA,,,,
+142,,f,14.38,NA,White (Non-Hispanic),,Not Hispanic or Latino,2,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,2,6,NA,8,NA,,,,
+143,,f,13.57,13.59,Other,South Asian (Nepal),Not Hispanic or Latino,Unknown,Unknown,Female,White (Non-Hispanic),,Not Hispanic or Latino,4,0,8,7,10,3,,,,
+144,,m,,7.36,NA,NA,NA,NA,NA,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,1,6,NA,7,NA,,,,
+145,,m,,8.66,NA,NA,NA,NA,NA,Female,White (Non-Hispanic),,Not Hispanic or Latino,1,1,6,NA,7,NA,,,,
+146,,m,,6.56,NA,NA,NA,NA,NA,,,,,,,6,NA,6,NA,,,,
+147,,f,,8.07,NA,NA,NA,NA,NA,,,,,,,6,NA,6,NA,,,,
+148,,m,,8.21,NA,NA,NA,NA,NA,,,,,,,NA,NA,NA,NA,,,,
+149,,f,8.66,NA,White (Non-Hispanic),,Not Hispanic or Latino,0,0,Female,White (Non-Hispanic),,Not Hispanic or Latino,0,2,5,NA,8,NA,,,,

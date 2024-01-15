@@ -1,4 +1,5 @@
 #!/bin/bash
+#XXX = an anonymized server path
 
 # this script creates a confound.txt file to be used in level-1 FSL analysis for one participant
 
@@ -11,7 +12,7 @@ subj=$1
 task=$2
 
 # navigate to participant folder
-cd /burg/psych/users/elfk/la2908/derivatives/01_fmriprep/${subj}/func/
+cd XXX/derivatives/01_fmriprep/${subj}/func/
 
 # rename the confound file so that each has a common name for the Rscript
 cp ${subj}_${task}_run-1_desc-confounds_timeseries.tsv confound_${task}.tsv
@@ -21,5 +22,5 @@ module load anaconda
 source activate r-environmemt
 
 # run script to create the confound.txt file
-Rscript /burg/psych/users/elfk/la2908/code/cond/05_confound_regressors/create_confound_txtfile_lowdof_rm1st4TRs_cond.R
+Rscript XXX/05_confound_regressors/create_confound_txtfile_lowdof_rm1st4TRs_cond.R
 

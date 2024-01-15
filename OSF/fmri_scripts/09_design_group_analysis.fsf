@@ -1,4 +1,6 @@
 
+#XXX=an anonymized server path
+
 # FEAT version number
 set fmri(version) 6.00
 
@@ -30,7 +32,7 @@ set fmri(featwatcher_yn) 1
 set fmri(sscleanup_yn) 0
 
 # Output directory
-set fmri(outputdir) "/ELFK/derivatives/conditioning/03_fsl_analysis/06_group/cope1_noise_fin_contrasts_skulstrip"
+set fmri(outputdir) "XXX/03_fsl_analysis/06_group/cope1_noise_fin_contrasts_skulstrip"
 
 # TR(s)
 set fmri(tr) 3
@@ -273,238 +275,238 @@ set fmri(totalVoxels) 902629
 set fmri(ncopeinputs) 0
 
 # 4D AVW data or FEAT directory (1)
-set feat_files(1) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-005/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(1) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-113/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (2)
-set feat_files(2) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-007/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(2) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-118/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (3)
-set feat_files(3) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-011/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(3) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-128/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (4)
-set feat_files(4) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-013/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(4) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-133/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (5)
-set feat_files(5) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-025/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(5) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-161/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (6)
-set feat_files(6) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-033/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(6) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-179/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (7)
-set feat_files(7) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-037/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(7) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-191/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (8)
-set feat_files(8) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-041/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(8) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-200/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (9)
-set feat_files(9) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-044/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(9) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-209/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (10)
-set feat_files(10) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-045/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(10) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-212/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (11)
-set feat_files(11) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-049/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(11) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-221/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (12)
-set feat_files(12) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-051/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(12) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-227/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (13)
-set feat_files(13) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-057/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(13) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-242/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (14)
-set feat_files(14) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-065/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(14) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-261/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (15)
-set feat_files(15) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-071/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(15) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-275/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (16)
-set feat_files(16) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-074/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(16) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-283/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (17)
-set feat_files(17) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-075/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(17) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-286/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (18)
-set feat_files(18) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-077/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(18) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-292/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (19)
-set feat_files(19) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-082/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(19) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-305/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (20)
-set feat_files(20) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-083/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(20) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-308/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (21)
-set feat_files(21) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-084/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(21) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-311/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (22)
-set feat_files(22) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-087/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(22) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-320/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (23)
-set feat_files(23) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-090/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(23) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-329/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (24)
-set feat_files(24) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-002/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(24) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-104/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (25)
-set feat_files(25) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-003/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(25) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-107/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (26)
-set feat_files(26) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-004/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(26) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-110/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (27)
-set feat_files(27) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-010/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(27) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-125/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (28)
-set feat_files(28) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-022/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(28) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-153/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (29)
-set feat_files(29) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-032/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(29) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-176/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (30)
-set feat_files(30) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-036/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(30) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-188/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (31)
-set feat_files(31) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-042/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(31) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-203/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (32)
-set feat_files(32) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-050/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(32) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-224/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (33)
-set feat_files(33) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-052/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(33) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-230/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (34)
-set feat_files(34) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-058/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(34) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-245/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (35)
-set feat_files(35) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-062/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(35) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-254/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (36)
-set feat_files(36) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-081/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(36) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-302/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (37)
-set feat_files(37) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-085/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(37) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-314/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (38)
-set feat_files(38) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-086/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(38) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-317/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (39)
-set feat_files(39) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-095/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(39) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-341/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (40)
-set feat_files(40) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-005/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(40) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-113/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (41)
-set feat_files(41) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-007/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(41) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-118/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (42)
-set feat_files(42) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-011/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(42) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-128/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (43)
-set feat_files(43) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-013/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(43) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-133/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (44)
-set feat_files(44) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-025/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(44) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-161/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (45)
-set feat_files(45) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-033/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(45) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-179/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (46)
-set feat_files(46) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-037/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(46) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-191/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (47)
-set feat_files(47) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-041/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(47) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-200/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (48)
-set feat_files(48) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-044/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(48) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-209/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (49)
-set feat_files(49) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-045/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(49) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-212/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (50)
-set feat_files(50) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-049/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(50) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-221/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (51)
-set feat_files(51) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-051/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(51) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-227/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (52)
-set feat_files(52) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-057/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(52) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-242/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (53)
-set feat_files(53) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-065/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(53) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-261/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (54)
-set feat_files(54) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-071/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(54) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-275/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (55)
-set feat_files(55) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-074/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(55) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-283/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (56)
-set feat_files(56) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-075/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(56) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-286/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (57)
-set feat_files(57) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-077/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(57) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-292/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (58)
-set feat_files(58) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-082/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(58) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-305/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (59)
-set feat_files(59) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-083/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(59) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-308/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (60)
-set feat_files(60) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-084/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(60) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-311/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (61)
-set feat_files(61) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-087/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(61) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-320/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (62)
-set feat_files(62) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-090/task-cond2.feat/stats/cope1.nii.gz"
+set feat_files(62) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-329/task-cond2.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (63)
-set feat_files(63) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-002/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(63) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-104/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (64)
-set feat_files(64) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-003/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(64) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-107/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (65)
-set feat_files(65) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-004/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(65) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-110/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (66)
-set feat_files(66) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-010/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(66) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-125/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (67)
-set feat_files(67) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-022/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(67) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-153/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (68)
-set feat_files(68) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-032/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(68) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-176/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (69)
-set feat_files(69) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-036/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(69) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-188/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (70)
-set feat_files(70) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-042/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(70) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-203/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (71)
-set feat_files(71) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-050/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(71) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-224/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (72)
-set feat_files(72) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-052/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(72) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-230/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (73)
-set feat_files(73) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-058/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(73) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-245/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (74)
-set feat_files(74) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-062/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(74) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-254/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (75)
-set feat_files(75) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-081/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(75) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-302/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (76)
-set feat_files(76) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-085/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(76) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-314/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (77)
-set feat_files(77) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-086/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(77) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-317/task-cond1.feat/stats/cope1.nii.gz"
 
 # 4D AVW data or FEAT directory (78)
-set feat_files(78) "/ELFK/derivatives/conditioning/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-095/task-cond1.feat/stats/cope1.nii.gz"
+set feat_files(78) "XXX/03_fsl_analysis/05_level1/smoothed_fin_contrasts_skulstrip/sub-341/task-cond1.feat/stats/cope1.nii.gz"
 
 # Add confound EVs text file
 set fmri(confoundevs) 0

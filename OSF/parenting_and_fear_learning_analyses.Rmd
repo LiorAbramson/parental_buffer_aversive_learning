@@ -47,11 +47,8 @@ output: html_document
   DBehav$version_time_and_stim <- paste0(DBehav$Version,"_",DBehav$time,"_",DBehav$Shape)
   
 #take only relevant variables 
-  DBehav <- DBehav[,c("Subject","DataFile.Basename","Like.RESP","Nervous.RESP","version_time_and_stim")]
+  DBehav <- DBehav[,c("Subject","Like.RESP","Nervous.RESP","version_time_and_stim")]
   
-#remove version V1_REG of subject 062  (a redundant, wrong file) 
-  DBehav <- DBehav[!(DBehav$Subject==62 & DBehav$DataFile.Basename=="Class_cond_v1_REG-0062-1"),]
-
 ```
 
 #add information about parental presence (present/absence)
@@ -64,6 +61,7 @@ output: html_document
   DParentInfo <- read.csv("data/classical_conditioning_parental_presence_data.csv")
   DBehav_Wide <- merge(DBehav_Wide,DParentInfo[,c("Subject","Version_Parent","Version_Alone","First_Cond")], by="Subject", all.x=T, all.y=F)
 ```
+
 #create a long format of parental context information to attach to fMRI data
 ```{r}
   DParentInfoLong <- DParentInfo[,c("Subject","Scan_Parent","Scan_Alone")]
@@ -76,7 +74,7 @@ output: html_document
 #NOTE: this data is not shared online due to privacy considerations and IRB constraints
 ```{r}
 #import data
-  DDemographics <- read.csv("../data/ELFK_demographics.csv")
+  DDemographics <- read.csv("../data/subjects_demographics.csv")
   DBehav_Wide <- merge(DBehav_Wide,DDemographics[,c("Subject","SEX","MRI_AGE","DEM_4_RACE_CHILD","DEM_4_RACE_CHILD_OTHER","AIOI_P1_EDU","AIOI_P2_EDU","AIOI_P1_Income","AIOI_P2_Income")], by="Subject", all.x=T, all.y=F)
   
 #check age, sex and race of the sample
@@ -142,17 +140,17 @@ output: html_document
 
 #exclude participants (from both long and wide dataframes) and check demographic characteristics of final sample 
 ```{r}
-#remove subjects 76 and 80 (experimenter error- watched the same shapes in both parental presence and absence conditions)
-#remove subjects 24 and 88 (did not complete both conditions)
-  DBehav <- DBehav[DBehav$Subject!=76 & DBehav$Subject!=80 & DBehav$Subject!=24 & DBehav$Subject!=88,]
-  DBehav_Wide <- DBehav_Wide[DBehav_Wide$Subject!=76 & DBehav_Wide$Subject!=80 & DBehav_Wide$Subject!=24 & DBehav_Wide$Subject!=88,]
+#remove subjects 289 and 299 (experimenter error- watched the same shapes in both parental presence and absence conditions)
+#remove subjects 158 and 323 (did not complete both conditions)
+  DBehav <- DBehav[DBehav$Subject!=289 & DBehav$Subject!=299 & DBehav$Subject!=158 & DBehav$Subject!=323,]
+  DBehav_Wide <- DBehav_Wide[DBehav_Wide$Subject!=289 & DBehav_Wide$Subject!=299 & DBehav_Wide$Subject!=158 & DBehav_Wide$Subject!=323,]
   
-#remove nervous rating data of subject 56 from v2- the parental absence condition (was not asked this question in the parent presence condition due to experimenter error)
-DBehav$Nervous.RESP[DBehav$Subject==56] <- NA
-DBehav_Wide$Nervous.RESP.v2_Pre_CSPlus[DBehav_Wide$Subject==56] <- NA
-DBehav_Wide$Nervous.RESP.v2_Post_CSPlus[DBehav_Wide$Subject==56] <- NA
-DBehav_Wide$Nervous.RESP.v2_Pre_CSMinus[DBehav_Wide$Subject==56] <- NA
-DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==56] <- NA
+#remove nervous rating data of subject 239 from v2- the parental absence condition (was not asked this question in the parent presence condition due to experimenter error)
+DBehav$Nervous.RESP[DBehav$Subject==239] <- NA
+DBehav_Wide$Nervous.RESP.v2_Pre_CSPlus[DBehav_Wide$Subject==239] <- NA
+DBehav_Wide$Nervous.RESP.v2_Post_CSPlus[DBehav_Wide$Subject==239] <- NA
+DBehav_Wide$Nervous.RESP.v2_Pre_CSMinus[DBehav_Wide$Subject==239] <- NA
+DBehav_Wide$Nervous.RESP.v2_Post_CSMinus[DBehav_Wide$Subject==239] <- NA
 
 #check age, sex and race for the final behavioral sample
   #age
